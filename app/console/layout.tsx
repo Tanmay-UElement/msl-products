@@ -173,172 +173,174 @@ export default function ConsoleLayout({
   };
 
   return (
-    <div className="app on">
-      {/* Mobile scrim */}
-      <div
-        className={`scrim ${sidebarOpen ? "on" : ""}`}
-        onClick={() => setSidebarOpen(false)}
-      ></div>
+    <div className="console-body">
+      <div className="app-container">
+        {/* Mobile scrim */}
+        <div
+          className={`scrim ${sidebarOpen ? "on" : ""}`}
+          onClick={() => setSidebarOpen(false)}
+        ></div>
 
-      {/* Sidebar navigation */}
-      <aside className={`side ${sidebarOpen ? "open" : ""}`} id="side">
-        <div className="side-top">
-          <Link className="brand" href="/">
-            <svg viewBox="0 0 26 26" fill="none" aria-hidden="true">
-              <rect x=".5" y=".5" width="25" height="25" stroke="#2E6BFF" />
-              <rect x="5" y="5" width="7" height="7" fill="#2E6BFF" />
-              <rect x="14" y="5" width="7" height="7" fill="#4DE1FF" opacity=".55" />
-              <rect x="5" y="14" width="7" height="7" fill="#4DE1FF" opacity=".55" />
-              <rect x="14" y="14" width="7" height="7" fill="#2E6BFF" />
-            </svg>
-            <span>
-              MSL <s>/ Console</s>
-            </span>
-          </Link>
-          
-          <div style={{ position: "relative" }}>
-            <button
-              className="proj"
-              onClick={() => setProjectMenuOpen(!projectMenuOpen)}
-            >
+        {/* Sidebar navigation */}
+        <aside className={`side ${sidebarOpen ? "open" : ""}`} id="side">
+          <div className="side-top">
+            <Link className="brand" href="/">
+              <svg viewBox="0 0 26 26" fill="none" aria-hidden="true">
+                <rect x=".5" y=".5" width="25" height="25" stroke="#2E6BFF" />
+                <rect x="5" y="5" width="7" height="7" fill="#2E6BFF" />
+                <rect x="14" y="5" width="7" height="7" fill="#4DE1FF" opacity=".55" />
+                <rect x="5" y="14" width="7" height="7" fill="#4DE1FF" opacity=".55" />
+                <rect x="14" y="14" width="7" height="7" fill="#2E6BFF" />
+              </svg>
               <span>
-                {org.name} / {org.project === "proj_research" ? "Research" : org.project === "proj_production" ? "Production" : "Sandbox"}
+                MSL <s>/ Console</s>
               </span>
-              <i>▼</i>
-            </button>
-            {projectMenuOpen && (
-              <div
-                className="notch"
-                style={{
-                  position: "absolute",
-                  top: "100%",
-                  left: 0,
-                  width: "100%",
-                  background: "var(--steel)",
-                  border: "1px solid var(--wire-2)",
-                  borderRadius: "3px",
-                  zIndex: 60,
-                  marginTop: "5px",
-                }}
-              >
-                {org.projects.map((p) => (
-                  <button
-                    key={p}
-                    onClick={() => handleProjectSelect(p)}
-                    style={{
-                      display: "block",
-                      width: "100%",
-                      textAlign: "left",
-                      padding: "10px 12px",
-                      fontSize: "11px",
-                      fontFamily: "var(--mono)",
-                      borderBottom: "1px solid var(--wire)",
-                      transition: ".15s",
-                    }}
-                    className="proj-item"
-                  >
-                    {p}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-
-        <nav>
-          {groupOrder.map((group) => (
-            <div key={group}>
-              <h6>{group}</h6>
-              {routeGroups[group].map((r) => {
-                const isSelected = activeSeg === r.seg;
-                const counter = getNavCounter(r.seg);
-                return (
-                  <Link
-                    key={r.seg}
-                    href={`/console${r.seg ? `/${r.seg}` : ""}`}
-                    className={isSelected ? "on" : ""}
-                    onClick={() => setSidebarOpen(false)}
-                  >
-                    {NAV_ICONS[r.icon]}
-                    <span>{r.title}</span>
-                    {counter > 0 && <span className="cnt">{counter}</span>}
-                  </Link>
-                );
-              })}
-            </div>
-          ))}
-        </nav>
-
-        <div className="side-foot">
-          <div className="usr">
-            <div className="avatar">{user.initials}</div>
-            <div style={{ minWidth: 0, flex: 1 }}>
-              <div className="n">{user.name}</div>
-              <div className="e">{user.email}</div>
-            </div>
-            <button
-              className="x"
-              id="signout"
-              title="Sign out"
-              onClick={logout}
-            >
-              ⏻
-            </button>
-          </div>
-        </div>
-      </aside>
-
-      {/* Main content body */}
-      <div className="main">
-        {/* Top Headerbar */}
-        <header className="topbar">
-          <button className="burger" onClick={() => setSidebarOpen(true)}>
-            <span></span>
-          </button>
-          
-          <div className="where">
-            {currentRoute.group} / <b>{currentRoute.title}</b>
-          </div>
-
-          <div className="tools">
-            <div className="pill live">
-              <span className="pulse"></span> live
-            </div>
+            </Link>
             
-            <select
-              className="pill"
-              style={{ border: "1px solid var(--wire)", padding: "4px 8px", background: "var(--rack)", color: "inherit", textTransform: "uppercase" }}
-              value={region}
-              onChange={(e) => setRegion(e.target.value)}
-            >
-              <option value="BOM1">BOM1 — Mumbai</option>
-              <option value="PNQ1">PNQ1 — Pune</option>
-              <option value="MAA1">MAA1 — Chennai</option>
-              <option value="DEL1">DEL1 — Noida</option>
-            </select>
-            <button
-              className="btn btn-primary btn-sm"
-              onClick={() => setDeployModalOpen(true)}
-            >
-              Deploy <span className="ar">↗</span>
-            </button>
-          </div>
-        </header>
-
-        {/* Console View body */}
-        <main className="body">
-          <div className="phead">
-            <div>
-              <h1>{currentRoute.title}</h1>
-              <p>{currentRoute.desc}</p>
+            <div style={{ position: "relative" }}>
+              <button
+                className="proj"
+                onClick={() => setProjectMenuOpen(!projectMenuOpen)}
+              >
+                <span>
+                  {org.name} / {org.project === "proj_research" ? "Research" : org.project === "proj_production" ? "Production" : "Sandbox"}
+                </span>
+                <i>▼</i>
+              </button>
+              {projectMenuOpen && (
+                <div
+                  className="notch"
+                  style={{
+                    position: "absolute",
+                    top: "100%",
+                    left: 0,
+                    width: "100%",
+                    background: "var(--steel)",
+                    border: "1px solid var(--wire-2)",
+                    borderRadius: "3px",
+                    zIndex: 60,
+                    marginTop: "5px",
+                  }}
+                >
+                  {org.projects.map((p) => (
+                    <button
+                      key={p}
+                      onClick={() => handleProjectSelect(p)}
+                      style={{
+                        display: "block",
+                        width: "100%",
+                        textAlign: "left",
+                        padding: "10px 12px",
+                        fontSize: "11px",
+                        fontFamily: "var(--mono)",
+                        borderBottom: "1px solid var(--wire)",
+                        transition: ".15s",
+                      }}
+                      className="proj-item"
+                    >
+                      {p}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
-          <div className="view on">
-            {children}
+
+          <nav>
+            {groupOrder.map((group) => (
+              <div key={group}>
+                <h6>{group}</h6>
+                {routeGroups[group].map((r) => {
+                  const isSelected = activeSeg === r.seg;
+                  const counter = getNavCounter(r.seg);
+                  return (
+                    <Link
+                      key={r.seg}
+                      href={`/console${r.seg ? `/${r.seg}` : ""}`}
+                      className={isSelected ? "on" : ""}
+                      onClick={() => setSidebarOpen(false)}
+                    >
+                      {NAV_ICONS[r.icon]}
+                      <span>{r.title}</span>
+                      {counter > 0 && <span className="cnt">{counter}</span>}
+                    </Link>
+                  );
+                })}
+              </div>
+            ))}
+          </nav>
+
+          <div className="side-foot">
+            <div className="usr">
+              <div className="avatar">{user.initials}</div>
+              <div style={{ minWidth: 0, flex: 1 }}>
+                <div className="n">{user.name}</div>
+                <div className="e">{user.email}</div>
+              </div>
+              <button
+                className="x"
+                id="signout"
+                title="Sign out"
+                onClick={logout}
+              >
+                ⏻
+              </button>
+            </div>
           </div>
-        </main>
+        </aside>
+
+        {/* Main content body */}
+        <div className="main-content">
+          {/* Top Headerbar */}
+          <header className="topbar">
+            <button className="burger" onClick={() => setSidebarOpen(true)}>
+              <span></span>
+            </button>
+            
+            <div className="where">
+              {currentRoute.group} / <b>{currentRoute.title}</b>
+            </div>
+
+            <div className="tools">
+              <div className="pill live">
+                <span className="pulse"></span> live
+              </div>
+              
+              <select
+                className="pill"
+                style={{ border: "1px solid var(--wire)", padding: "4px 8px", background: "var(--rack)", color: "inherit", textTransform: "uppercase" }}
+                value={region}
+                onChange={(e) => setRegion(e.target.value)}
+              >
+                <option value="BOM1">BOM1 — Mumbai</option>
+                <option value="PNQ1">PNQ1 — Pune</option>
+                <option value="MAA1">MAA1 — Chennai</option>
+                <option value="DEL1">DEL1 — Noida</option>
+              </select>
+              <button
+                className="btn btn-primary btn-sm"
+                onClick={() => setDeployModalOpen(true)}
+              >
+                Deploy <span className="ar">↗</span>
+              </button>
+            </div>
+          </header>
+
+          {/* Console View body */}
+          <main className="console-body-content">
+            <div className="phead">
+              <div>
+                <h1>{currentRoute.title}</h1>
+                <p>{currentRoute.desc}</p>
+              </div>
+            </div>
+            <div className="view on">
+              {children}
+            </div>
+          </main>
+        </div>
+        <DeployModal />
       </div>
-      <DeployModal />
     </div>
   );
 }
