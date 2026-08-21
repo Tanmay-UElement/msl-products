@@ -1,0 +1,1571 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MSL — GPU, compute and storage from Indian datacenters</title>
+<meta name="description" content="MSL Products runs GPU, compute and storage capacity out of Tier III datacenters in Mumbai, Pune, Chennai and Noida. Per-second billing, zero egress fees, data stays in India.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   MSL PRODUCTS — design tokens
+   Next.js port: these live in app/globals.css @layer base
+   ============================================================ */
+:root{
+  --void:#05070B;
+  --rack:#0A0E15;
+  --steel:#111823;
+  --raised:#161E2B;
+  --wire:rgba(255,255,255,.09);
+  --wire-2:rgba(255,255,255,.16);
+  --ink:#EDF1F7;
+  --ink-2:#9AA7BC;
+  --ink-3:#63718A;
+  --blue:#2E6BFF;
+  --blue-hi:#5B8CFF;
+  --blue-dim:rgba(46,107,255,.14);
+  --signal:#4DE1FF;
+  --thermal:#FFB020;
+  --u:1.5rem;
+  --rail:76px;
+  --maxw:1240px;
+  --disp:'Archivo',system-ui,sans-serif;
+  --body:'IBM Plex Sans',system-ui,sans-serif;
+  --mono:'IBM Plex Mono',ui-monospace,monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+body{
+  background:var(--void);color:var(--ink);
+  font-family:var(--body);font-weight:300;font-size:16px;line-height:1.6;
+  -webkit-font-smoothing:antialiased;overflow-x:hidden;
+}
+::selection{background:var(--blue);color:#fff}
+a{color:inherit;text-decoration:none}
+img,svg{display:block;max-width:100%}
+button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
+:focus-visible{outline:2px solid var(--signal);outline-offset:3px;border-radius:2px}
+
+/* --- ambient grid (Cadabra-derived) ------------------------- */
+.grid-bg{
+  position:fixed;inset:0;z-index:0;pointer-events:none;
+  background-image:
+    linear-gradient(to right,rgba(255,255,255,.028) 1px,transparent 1px),
+    linear-gradient(to bottom,rgba(255,255,255,.028) 1px,transparent 1px);
+  background-size:64px 64px;
+  mask-image:radial-gradient(ellipse 100% 70% at 50% 0%,#000 30%,transparent 85%);
+}
+.glow{
+  position:fixed;left:50%;bottom:-40vh;transform:translateX(-50%);
+  width:130vw;height:80vh;z-index:0;pointer-events:none;
+  background:radial-gradient(ellipse at center,rgba(46,107,255,.20),transparent 62%);
+}
+
+/* --- typography roles --------------------------------------- */
+.disp{
+  font-family:var(--disp);font-weight:800;
+  font-variation-settings:'wdth' 118;
+  text-transform:uppercase;letter-spacing:-.005em;line-height:.94;
+}
+.eyebrow{
+  font-family:var(--mono);font-size:11px;font-weight:500;
+  letter-spacing:.18em;text-transform:uppercase;color:var(--ink-3);
+}
+.eyebrow b{color:var(--signal);font-weight:500}
+.lede{font-size:1.0625rem;color:var(--ink-2);max-width:56ch;line-height:1.65}
+h2.sect{font-family:var(--disp);font-weight:800;font-variation-settings:'wdth' 115;
+  text-transform:uppercase;font-size:clamp(1.75rem,3.6vw,2.85rem);line-height:1;letter-spacing:-.01em}
+h3.sub{font-family:var(--body);font-weight:500;font-size:1.125rem;letter-spacing:-.01em}
+.mono{font-family:var(--mono)}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+
+/* --- shell / rack rail -------------------------------------- */
+.shell{position:relative;z-index:1;max-width:var(--maxw);margin:0 auto;padding:0 28px}
+.railed{display:grid;grid-template-columns:var(--rail) 1fr;gap:0}
+.rail{
+  border-right:1px solid var(--wire);position:relative;
+  padding-top:8px;
+}
+.rail-u{
+  font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;color:var(--ink-3);
+  position:sticky;top:96px;padding-right:16px;text-align:right;
+}
+.rail-u::after{content:"";position:absolute;right:-1px;top:50%;width:9px;height:1px;background:var(--wire-2)}
+.railed>.rbody{padding-left:36px;padding-bottom:104px;padding-top:4px}
+@media(max-width:860px){
+  .railed{grid-template-columns:1fr}
+  .rail{border-right:none;border-left:1px solid var(--wire);padding-left:12px;margin-bottom:14px}
+  .rail-u{text-align:left;position:static;padding-right:0}
+  .rail-u::after{display:none}
+  .railed>.rbody{padding-left:12px;border-left:1px solid var(--wire);padding-bottom:72px}
+}
+
+/* --- notched frame (from the GPU reference's corner cut) ----- */
+.notch{
+  position:relative;background:var(--rack);border:1px solid var(--wire);
+  clip-path:polygon(0 14px,14px 0,100% 0,100% calc(100% - 14px),calc(100% - 14px) 100%,0 100%);
+}
+
+/* --- buttons ------------------------------------------------- */
+.btn{
+  display:inline-flex;align-items:center;gap:10px;
+  font-family:var(--mono);font-size:12px;font-weight:500;letter-spacing:.12em;text-transform:uppercase;
+  padding:14px 22px;border-radius:999px;transition:.18s ease;white-space:nowrap;
+}
+.btn-primary{background:var(--blue);color:#fff}
+.btn-primary:hover{background:var(--blue-hi);transform:translateY(-1px)}
+.btn-ghost{border:1px solid var(--wire-2);color:var(--ink)}
+.btn-ghost:hover{border-color:var(--blue-hi);color:var(--blue-hi);background:var(--blue-dim)}
+.btn .ar{font-size:14px;transition:transform .18s}
+.btn:hover .ar{transform:translate(2px,-2px)}
+.btnrow{display:flex;flex-wrap:wrap;gap:12px}
+
+/* --- header -------------------------------------------------- */
+header.nav{
+  position:sticky;top:0;z-index:60;background:rgba(5,7,11,.82);
+  backdrop-filter:blur(14px);border-bottom:1px solid var(--wire);
+}
+.navin{max-width:var(--maxw);margin:0 auto;padding:0 28px;height:64px;
+  display:flex;align-items:center;justify-content:space-between;gap:24px}
+.brand{display:flex;align-items:center;gap:11px}
+.brand-mk{width:26px;height:26px;flex:none}
+.brand-tx{font-family:var(--disp);font-weight:800;font-variation-settings:'wdth' 122;
+  text-transform:uppercase;font-size:15px;letter-spacing:.06em}
+.brand-tx s{text-decoration:none;color:var(--ink-3);font-weight:500}
+.navlinks{display:flex;gap:4px;align-items:center}
+.navlinks a{
+  font-family:var(--mono);font-size:11.5px;letter-spacing:.11em;text-transform:uppercase;
+  color:var(--ink-2);padding:9px 13px;border-radius:6px;transition:.15s;
+}
+.navlinks a:hover{color:var(--ink);background:rgba(255,255,255,.05)}
+.navlinks a.on{color:var(--ink)}
+.navlinks a.on::after{content:"";display:block;height:1px;background:var(--blue);margin-top:5px}
+.navcta{display:flex;gap:10px;align-items:center}
+.burger{display:none;width:40px;height:40px;align-items:center;justify-content:center}
+.burger span{display:block;width:18px;height:1px;background:var(--ink);position:relative}
+.burger span::before,.burger span::after{content:"";position:absolute;left:0;width:18px;height:1px;background:var(--ink)}
+.burger span::before{top:-5px}.burger span::after{top:5px}
+@media(max-width:1080px){
+  .navlinks{position:fixed;inset:64px 0 auto 0;background:var(--rack);border-bottom:1px solid var(--wire);
+    flex-direction:column;align-items:stretch;padding:12px;gap:0;display:none}
+  .navlinks.open{display:flex}
+  .navlinks a{padding:14px;font-size:12.5px}
+  .navlinks a.on::after{display:none}
+  .burger{display:flex}
+  .navcta .btn-ghost{display:none}
+}
+
+/* --- section rhythm ------------------------------------------ */
+.band{border-top:1px solid var(--wire);position:relative;z-index:1}
+.band-tint{background:linear-gradient(180deg,rgba(46,107,255,.045),transparent 55%)}
+.pad{padding:88px 0}
+@media(max-width:860px){.pad{padding:56px 0}}
+.stack-sm>*+*{margin-top:14px}
+.stack>*+*{margin-top:22px}
+.stack-lg>*+*{margin-top:40px}
+
+/* ============================================================
+   SIGNATURE — rack elevation
+   ============================================================ */
+.rackwrap{position:relative}
+.rack{
+  background:linear-gradient(180deg,var(--rack),#070A10);
+  border:1px solid var(--wire);border-radius:4px;overflow:hidden;
+}
+.rack-head{
+  display:flex;justify-content:space-between;align-items:center;gap:12px;
+  padding:12px 16px;border-bottom:1px solid var(--wire);background:rgba(255,255,255,.02);
+  font-family:var(--mono);font-size:10.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--ink-3);
+}
+.rack-head .lv{display:flex;align-items:center;gap:7px;color:var(--signal)}
+.pulse{width:6px;height:6px;border-radius:50%;background:var(--signal);
+  box-shadow:0 0 0 0 rgba(77,225,255,.6);animation:pulse 2.2s infinite}
+@keyframes pulse{70%{box-shadow:0 0 0 7px rgba(77,225,255,0)}100%{box-shadow:0 0 0 0 rgba(77,225,255,0)}}
+.sled{
+  display:grid;grid-template-columns:44px 118px 1fr auto;align-items:center;gap:14px;
+  padding:10px 16px;border-bottom:1px solid rgba(255,255,255,.05);
+  font-family:var(--mono);font-size:11px;transition:background .16s;cursor:default;
+}
+.sled:last-child{border-bottom:none}
+.sled:hover{background:rgba(46,107,255,.07)}
+.sled .u{color:var(--ink-3);letter-spacing:.08em}
+.sled .model{color:var(--ink);font-size:11.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.slots{display:flex;gap:3px;min-width:0}
+.slot{flex:1;height:16px;background:rgba(255,255,255,.05);border-radius:1px;
+  transition:background .5s ease,box-shadow .5s ease;max-width:26px}
+.slot.on{background:var(--blue);box-shadow:0 0 9px rgba(46,107,255,.55)}
+.slot.warm{background:var(--thermal);box-shadow:0 0 9px rgba(255,176,32,.4)}
+.sled .st{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3);white-space:nowrap}
+.sled .st.live{color:var(--signal)}
+.sled .st.free{color:var(--ink-3)}
+.sled .st.prov{color:var(--thermal)}
+.rack-foot{
+  display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px;
+  padding:11px 16px;border-top:1px solid var(--wire);background:rgba(255,255,255,.015);
+  font-family:var(--mono);font-size:10px;letter-spacing:.13em;text-transform:uppercase;color:var(--ink-3);
+}
+@media(max-width:600px){
+  .sled{grid-template-columns:38px 1fr auto;gap:10px}
+  .sled .slots{display:none}
+}
+
+/* --- hero ---------------------------------------------------- */
+.hero{padding:64px 0 0}
+.hero h1{
+  font-family:var(--disp);font-weight:800;font-variation-settings:'wdth' 120;
+  text-transform:uppercase;font-size:clamp(2.6rem,7.4vw,5.1rem);line-height:.9;letter-spacing:-.02em;
+}
+.hero h1 em{font-style:normal;color:var(--blue-hi)}
+.herogrid{display:grid;grid-template-columns:1.05fr .95fr;gap:56px;align-items:start}
+@media(max-width:980px){.herogrid{grid-template-columns:1fr;gap:36px}}
+
+/* --- logo strip ---------------------------------------------- */
+.logos{display:flex;flex-wrap:wrap;align-items:center;gap:14px 40px}
+.logo-t{font-family:var(--disp);font-weight:700;font-variation-settings:'wdth' 108;
+  font-size:15px;letter-spacing:.03em;color:var(--ink-3);text-transform:uppercase;transition:.2s}
+.logo-t:hover{color:var(--ink-2)}
+
+/* --- generic cards ------------------------------------------- */
+.cards{display:grid;gap:1px;background:var(--wire);border:1px solid var(--wire)}
+.cards-3{grid-template-columns:repeat(3,1fr)}
+.cards-2{grid-template-columns:repeat(2,1fr)}
+.cards-4{grid-template-columns:repeat(4,1fr)}
+.card{background:var(--void);padding:28px 24px;transition:background .2s;position:relative}
+.card:hover{background:var(--rack)}
+.card .k{font-family:var(--mono);font-size:10px;letter-spacing:.15em;color:var(--blue-hi);text-transform:uppercase}
+.card h4{font-family:var(--body);font-weight:500;font-size:1.0625rem;margin:14px 0 8px;letter-spacing:-.01em}
+.card p{font-size:.9375rem;color:var(--ink-2);line-height:1.62}
+@media(max-width:900px){.cards-3,.cards-4{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:620px){.cards-3,.cards-4,.cards-2{grid-template-columns:1fr}}
+
+/* --- link cards ---------------------------------------------- */
+.lcard{display:block;background:var(--void);padding:30px 26px;transition:.2s;position:relative}
+.lcard:hover{background:var(--rack)}
+.lcard:hover .go{color:var(--blue-hi);transform:translate(3px,-3px)}
+.lcard .go{position:absolute;top:24px;right:24px;color:var(--ink-3);font-size:15px;transition:.2s}
+.lcard .price{font-family:var(--mono);font-size:12px;color:var(--signal);margin-top:16px;display:block}
+
+/* --- spec ledger (corner metadata, GPU-ref derived) ---------- */
+.ledger{display:grid;grid-template-columns:repeat(4,1fr);border:1px solid var(--wire);background:var(--rack)}
+.ledger div{padding:22px;border-right:1px solid var(--wire)}
+.ledger div:last-child{border-right:none}
+.ledger .v{font-family:var(--disp);font-weight:800;font-variation-settings:'wdth' 112;
+  font-size:clamp(1.5rem,3.1vw,2.1rem);line-height:1;letter-spacing:-.02em}
+.ledger .v s{text-decoration:none;color:var(--blue-hi)}
+.ledger .l{font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--ink-3);margin-top:10px}
+@media(max-width:820px){
+  .ledger{grid-template-columns:repeat(2,1fr)}
+  .ledger div{border-bottom:1px solid var(--wire)}
+  .ledger div:nth-child(2n){border-right:none}
+  .ledger div:nth-last-child(-n+2){border-bottom:none}
+}
+
+/* --- table --------------------------------------------------- */
+.tblwrap{border:1px solid var(--wire);overflow-x:auto;background:var(--rack)}
+table{width:100%;border-collapse:collapse;min-width:640px}
+thead th{
+  font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--ink-3);text-align:left;padding:13px 18px;border-bottom:1px solid var(--wire);font-weight:500;
+  background:rgba(255,255,255,.02);white-space:nowrap;
+}
+tbody td{padding:15px 18px;border-bottom:1px solid rgba(255,255,255,.05);font-size:.9375rem;color:var(--ink-2)}
+tbody tr:last-child td{border-bottom:none}
+tbody tr:hover{background:rgba(46,107,255,.05)}
+tbody td.name{color:var(--ink);font-weight:400}
+tbody td.rate{font-family:var(--mono);color:var(--signal);font-size:.875rem;white-space:nowrap}
+tbody td.dim{font-family:var(--mono);font-size:.8125rem;color:var(--ink-3)}
+
+/* --- code card (Synthesized-derived) ------------------------- */
+.code{background:#080B11;border:1px solid var(--wire);border-radius:4px;overflow:hidden}
+.code-h{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;
+  border-bottom:1px solid var(--wire);font-family:var(--mono);font-size:10px;
+  letter-spacing:.13em;text-transform:uppercase;color:var(--ink-3)}
+.code-b{padding:16px 14px;font-family:var(--mono);font-size:12.5px;line-height:1.85;overflow-x:auto;color:var(--ink-2)}
+.code-b .c{color:var(--ink-3)}
+.code-b .k{color:var(--blue-hi)}
+.code-b .s{color:var(--signal)}
+.copy{font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3);transition:.15s}
+.copy:hover{color:var(--signal)}
+
+/* --- steps --------------------------------------------------- */
+.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--wire);border:1px solid var(--wire)}
+.step{background:var(--void);padding:28px 24px}
+.step .n{font-family:var(--mono);font-size:10px;letter-spacing:.15em;color:var(--blue-hi)}
+.step h4{font-family:var(--disp);font-weight:800;font-variation-settings:'wdth' 112;text-transform:uppercase;
+  font-size:1.0625rem;margin:14px 0 9px;letter-spacing:-.005em}
+.step p{font-size:.9375rem;color:var(--ink-2)}
+@media(max-width:820px){.steps{grid-template-columns:1fr}}
+
+/* --- region list --------------------------------------------- */
+.region{display:grid;grid-template-columns:88px 1fr auto;gap:20px;align-items:center;
+  padding:18px 0;border-bottom:1px solid var(--wire)}
+.region:last-child{border-bottom:none}
+.region .code-t{font-family:var(--mono);font-size:13px;color:var(--blue-hi);letter-spacing:.06em}
+.region .city{font-size:1rem;color:var(--ink)}
+.region .meta{font-family:var(--mono);font-size:10.5px;color:var(--ink-3);letter-spacing:.08em;
+  text-transform:uppercase;margin-top:4px}
+.region .tag{font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;
+  padding:5px 11px;border:1px solid var(--wire-2);border-radius:999px;color:var(--ink-2);white-space:nowrap}
+.region .tag.soon{color:var(--thermal);border-color:rgba(255,176,32,.35)}
+@media(max-width:640px){.region{grid-template-columns:1fr;gap:8px}}
+
+/* --- faq / accordion ----------------------------------------- */
+.faq{border-top:1px solid var(--wire)}
+.faq details{border-bottom:1px solid var(--wire)}
+.faq summary{padding:20px 0;cursor:pointer;list-style:none;display:flex;justify-content:space-between;
+  gap:20px;font-size:1rem;color:var(--ink);transition:color .15s}
+.faq summary::-webkit-details-marker{display:none}
+.faq summary:hover{color:var(--blue-hi)}
+.faq summary::after{content:"+";font-family:var(--mono);color:var(--ink-3);flex:none}
+.faq details[open] summary::after{content:"–"}
+.faq p{padding:0 0 20px;color:var(--ink-2);font-size:.9375rem;max-width:70ch}
+
+/* --- form ---------------------------------------------------- */
+.field{display:block}
+.field span{display:block;font-family:var(--mono);font-size:10px;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--ink-3);margin-bottom:8px}
+.field input,.field select,.field textarea{
+  width:100%;background:var(--rack);border:1px solid var(--wire);color:var(--ink);
+  padding:12px 14px;font-family:var(--body);font-size:.9375rem;border-radius:3px;transition:.15s;
+}
+.field input:focus,.field select:focus,.field textarea:focus{
+  outline:none;border-color:var(--blue);box-shadow:0 0 0 3px var(--blue-dim)}
+.field textarea{resize:vertical;min-height:120px}
+.f2{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+@media(max-width:620px){.f2{grid-template-columns:1fr}}
+.note{font-family:var(--mono);font-size:11px;color:var(--ink-3);letter-spacing:.04em}
+
+/* --- pricing toggle ------------------------------------------ */
+.toggle{display:inline-flex;border:1px solid var(--wire);border-radius:999px;padding:3px;background:var(--rack)}
+.toggle button{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;
+  padding:9px 18px;border-radius:999px;color:var(--ink-3);transition:.15s}
+.toggle button.on{background:var(--blue);color:#fff}
+
+/* --- CTA band ------------------------------------------------ */
+.cta{border-top:1px solid var(--wire);background:
+  radial-gradient(ellipse 80% 100% at 50% 100%,rgba(46,107,255,.16),transparent 70%);position:relative;z-index:1}
+
+/* --- footer -------------------------------------------------- */
+footer{border-top:1px solid var(--wire);background:var(--rack);position:relative;z-index:1}
+.fgrid{display:grid;grid-template-columns:1.6fr repeat(4,1fr);gap:36px;padding:56px 0 40px}
+.fcol h5{font-family:var(--mono);font-size:10px;letter-spacing:.15em;text-transform:uppercase;
+  color:var(--ink-3);margin-bottom:16px}
+.fcol a{display:block;font-size:.875rem;color:var(--ink-2);padding:5px 0;transition:.15s}
+.fcol a:hover{color:var(--blue-hi)}
+.fbase{display:flex;justify-content:space-between;flex-wrap:wrap;gap:14px;
+  padding:18px 0;border-top:1px solid var(--wire);
+  font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3)}
+@media(max-width:900px){.fgrid{grid-template-columns:1fr 1fr;gap:30px}}
+@media(max-width:560px){.fgrid{grid-template-columns:1fr}}
+
+/* --- misc ---------------------------------------------------- */
+.split{display:grid;grid-template-columns:1fr 1fr;gap:56px;align-items:center}
+.split-t{align-items:start}
+@media(max-width:900px){.split{grid-template-columns:1fr;gap:34px}}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;
+  padding:6px 12px;border:1px solid var(--wire);border-radius:999px;color:var(--ink-2);background:var(--rack)}
+.bullets{list-style:none}
+.bullets li{padding:11px 0 11px 24px;border-bottom:1px solid var(--wire);position:relative;
+  font-size:.9375rem;color:var(--ink-2)}
+.bullets li::before{content:"";position:absolute;left:0;top:19px;width:9px;height:1px;background:var(--blue)}
+.bullets li:last-child{border-bottom:none}
+.bullets li b{color:var(--ink);font-weight:500}
+.page{display:none}
+.page.on{display:block;animation:fade .3s ease}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.reveal{opacity:0;transform:translateY(14px);transition:opacity .6s ease,transform .6s ease}
+.reveal.in{opacity:1;transform:none}
+@media(prefers-reduced-motion:reduce){
+  *{animation-duration:.001ms!important;transition-duration:.001ms!important}
+  .reveal{opacity:1;transform:none}
+  html{scroll-behavior:auto}
+}
+</style>
+</head>
+<body>
+<div class="grid-bg"></div>
+<div class="glow"></div>
+
+<!-- ===================== HEADER ===================== -->
+<header class="nav">
+  <div class="navin">
+    <a href="#/" class="brand" aria-label="MSL Products home">
+      <svg class="brand-mk" viewBox="0 0 26 26" fill="none" aria-hidden="true">
+        <rect x=".5" y=".5" width="25" height="25" stroke="#2E6BFF"/>
+        <rect x="5" y="5" width="7" height="7" fill="#2E6BFF"/>
+        <rect x="14" y="5" width="7" height="7" fill="#4DE1FF" opacity=".55"/>
+        <rect x="5" y="14" width="7" height="7" fill="#4DE1FF" opacity=".55"/>
+        <rect x="14" y="14" width="7" height="7" fill="#2E6BFF"/>
+      </svg>
+      <span class="brand-tx">MSL <s>/ Products</s></span>
+    </a>
+    <nav class="navlinks" id="nav">
+      <a href="#/gpu">GPU</a>
+      <a href="#/compute">Compute</a>
+      <a href="#/storage">Storage</a>
+      <a href="#/platform">Platform</a>
+      <a href="#/solutions">Solutions</a>
+      <a href="#/infrastructure">Datacenters</a>
+      <a href="#/pricing">Pricing</a>
+      <a href="#/docs">Docs</a>
+      <a href="#/company">Company</a>
+    </nav>
+    <div class="navcta">
+      <a href="#/contact" class="btn btn-ghost">Talk to us</a>
+      <a href="#/docs" class="btn btn-primary">Deploy <span class="ar">↗</span></a>
+      <button class="burger" id="burger" aria-label="Menu" aria-expanded="false"><span></span></button>
+    </div>
+  </div>
+</header>
+
+<main id="app">
+
+<!-- ===================== HOME ===================== -->
+<section class="page on" data-page="/">
+
+  <div class="shell hero">
+    <div class="herogrid">
+      <div class="stack">
+        <p class="eyebrow"><b>●</b> &nbsp;Mumbai · Pune · Chennai · Noida</p>
+        <h1>GPU capacity<br>that lives<br><em>in India</em></h1>
+        <p class="lede">Rent H200s, H100s and L40S by the second from our own Tier III floors. Your data never leaves the country, and you never pay to get it out.</p>
+        <div class="btnrow">
+          <a href="#/gpu" class="btn btn-primary">Deploy a pod <span class="ar">↗</span></a>
+          <a href="#/contact" class="btn btn-ghost">Reserve a cluster</a>
+        </div>
+        <p class="note">Per-second billing · Zero egress · No commitment on on-demand</p>
+      </div>
+
+      <!-- SIGNATURE: live rack elevation -->
+      <div class="rackwrap">
+        <div class="rack" id="rack">
+          <div class="rack-head">
+            <span>Rack BOM1-A14 · Mumbai</span>
+            <span class="lv"><i class="pulse"></i> Live</span>
+          </div>
+          <div class="sled"><span class="u">U42</span><span class="model">8× H200 SXM</span><span class="slots" data-fill="8"></span><span class="st live">Allocated</span></div>
+          <div class="sled"><span class="u">U38</span><span class="model">8× H200 SXM</span><span class="slots" data-fill="8"></span><span class="st live">Allocated</span></div>
+          <div class="sled"><span class="u">U34</span><span class="model">8× H100 SXM</span><span class="slots" data-fill="6"></span><span class="st live">Allocated</span></div>
+          <div class="sled"><span class="u">U30</span><span class="model">8× H100 SXM</span><span class="slots" data-fill="0" data-prov="1"></span><span class="st prov">Provisioning</span></div>
+          <div class="sled"><span class="u">U26</span><span class="model">8× L40S</span><span class="slots" data-fill="3"></span><span class="st free">5 free</span></div>
+          <div class="sled"><span class="u">U22</span><span class="model">8× A100 80GB</span><span class="slots" data-fill="8"></span><span class="st live">Allocated</span></div>
+          <div class="sled"><span class="u">U18</span><span class="model">Storage — 720 TB NVMe</span><span class="slots" data-fill="7"></span><span class="st live">Attached</span></div>
+          <div class="sled"><span class="u">U14</span><span class="model">8× RTX 6000 Ada</span><span class="slots" data-fill="0"></span><span class="st free">8 free</span></div>
+          <div class="rack-foot">
+            <span>Draw <b class="mono" style="color:var(--thermal)">31.4 kW</b> / 44 kW</span>
+            <span>Inlet 22°C</span>
+            <span>PUE 1.38</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="band pad" style="margin-top:72px">
+    <div class="shell stack">
+      <p class="eyebrow">Running production workloads on MSL</p>
+      <div class="logos">
+        <span class="logo-t">Vantara AI</span>
+        <span class="logo-t">Kettle Labs</span>
+        <span class="logo-t">Northline Bank</span>
+        <span class="logo-t">Praxis Health</span>
+        <span class="logo-t">Orbit Studios</span>
+        <span class="logo-t">Meridian Auto</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- three services, racked -->
+  <div class="band band-tint pad">
+    <div class="shell railed">
+      <div class="rail"><div class="rail-u">U42</div></div>
+      <div class="rbody stack-lg">
+        <div class="stack-sm">
+          <p class="eyebrow">What we rent</p>
+          <h2 class="sect">Three things,<br>done properly</h2>
+          <p class="lede">Everything else is an integration. We build, power and cool the machines ourselves, so the price you see is the cost of the metal plus our margin — not a chain of resellers.</p>
+        </div>
+        <div class="cards cards-3">
+          <a class="lcard" href="#/gpu">
+            <span class="go">↗</span>
+            <span class="k">GPUaaS</span>
+            <h4 style="font-family:var(--body);font-weight:500;font-size:1.0625rem;margin:14px 0 8px">GPU as a Service</h4>
+            <p style="font-size:.9375rem;color:var(--ink-2)">Bare-metal and containerised GPUs from a single card to a 512-GPU InfiniBand fabric. Spin up in about 40 seconds.</p>
+            <span class="price">from ₹44 / GPU-hr</span>
+          </a>
+          <a class="lcard" href="#/compute">
+            <span class="go">↗</span>
+            <span class="k">CaaS</span>
+            <h4 style="font-family:var(--body);font-weight:500;font-size:1.0625rem;margin:14px 0 8px">Compute as a Service</h4>
+            <p style="font-size:.9375rem;color:var(--ink-2)">Virtual machines, dedicated hosts and autoscaling container pools on EPYC and Xeon, billed by the second.</p>
+            <span class="price">from ₹1.10 / vCPU-hr</span>
+          </a>
+          <a class="lcard" href="#/storage">
+            <span class="go">↗</span>
+            <span class="k">StaaS</span>
+            <h4 style="font-family:var(--body);font-weight:500;font-size:1.0625rem;margin:14px 0 8px">Storage as a Service</h4>
+            <p style="font-size:.9375rem;color:var(--ink-2)">NVMe block, S3-compatible object and archive tiers on the same fabric as your compute. Egress is free.</p>
+            <span class="price">from ₹0.40 / GB-month</span>
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- quickstart -->
+  <div class="band pad">
+    <div class="shell railed">
+      <div class="rail"><div class="rail-u">U34</div></div>
+      <div class="rbody">
+        <div class="split split-t">
+          <div class="stack">
+            <p class="eyebrow">From nothing to training</p>
+            <h2 class="sect">Four commands.<br>No sales call.</h2>
+            <p class="lede">Sign up with a company email, add a payment method, and the API is live. Enterprise procurement exists if you want it — it just isn't in the way.</p>
+            <ul class="bullets">
+              <li><b>CLI, REST and Terraform</b> — the same resource model in all three</li>
+              <li><b>OCI images</b> — bring your own container or start from our CUDA bases</li>
+              <li><b>Persistent volumes</b> — attach the same NVMe volume to any pod in the region</li>
+              <li><b>Idle timeout</b> — pods stop themselves so a forgotten notebook can't cost you a weekend</li>
+            </ul>
+            <div class="btnrow"><a href="#/docs" class="btn btn-ghost">Read the quickstart <span class="ar">↗</span></a></div>
+          </div>
+          <div class="code">
+            <div class="code-h"><span>bash — provision an H100 pod</span><button class="copy" data-copy="msl pods create --gpu h100-sxm --count 8 --image msl/pytorch:2.4-cu124 --volume scratch:2Ti --region bom1">Copy</button></div>
+            <div class="code-b"><span class="c"># install and authenticate</span><br>
+$ pip install <span class="s">msl-cli</span><br>
+$ msl <span class="k">auth login</span><br><br>
+<span class="c"># eight H100s, a 2 TiB scratch volume, Mumbai</span><br>
+$ msl <span class="k">pods create</span> \<br>
+&nbsp;&nbsp;&nbsp;&nbsp;--gpu <span class="s">h100-sxm</span> --count <span class="s">8</span> \<br>
+&nbsp;&nbsp;&nbsp;&nbsp;--image <span class="s">msl/pytorch:2.4-cu124</span> \<br>
+&nbsp;&nbsp;&nbsp;&nbsp;--volume <span class="s">scratch:2Ti</span> --region <span class="s">bom1</span><br><br>
+<span class="c">✓ pod-7fk29d running in 38s</span><br>
+<span class="c">✓ ssh msl@7fk29d.bom1.mslproducts.com</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ledger -->
+  <div class="band pad">
+    <div class="shell stack">
+      <p class="eyebrow">The floor, in numbers</p>
+      <div class="ledger">
+        <div><p class="v"><s>4</s> sites</p><p class="l">Mumbai · Pune · Chennai · Noida</p></div>
+        <div><p class="v">18 MW</p><p class="l">Contracted IT load</p></div>
+        <div><p class="v">1.38</p><p class="l">Design PUE</p></div>
+        <div><p class="v">99.99<s>%</s></p><p class="l">Uptime commitment</p></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- why -->
+  <div class="band pad">
+    <div class="shell railed">
+      <div class="rail"><div class="rail-u">U22</div></div>
+      <div class="rbody stack-lg">
+        <div class="stack-sm">
+          <p class="eyebrow">Why teams move here</p>
+          <h2 class="sect">The boring<br>reasons matter</h2>
+        </div>
+        <div class="cards cards-2">
+          <div class="card"><span class="k">Latency</span><h4>Under 10 ms to your users</h4><p>Inference served from Mumbai reaches most of western India in single-digit milliseconds. A US region cannot do that, whatever the GPU costs there.</p></div>
+          <div class="card"><span class="k">Residency</span><h4>Data stays where the law wants it</h4><p>RBI localisation, the DPDP Act and sectoral rules all point the same way. Our regions are in-country and audited, so residency stops being a design constraint.</p></div>
+          <div class="card"><span class="k">Egress</span><h4>Nothing to pay on the way out</h4><p>Moving a checkpoint set out of a hyperscaler can cost more than training it. We don't meter egress at all — not on object storage, not on pods.</p></div>
+          <div class="card"><span class="k">Support</span><h4>Engineers in your timezone</h4><p>The person who answers at 3 a.m. IST can see the rack, the switch and the PDU. Escalation is a corridor, not a ticket queue in another hemisphere.</p></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- workloads -->
+  <div class="band pad">
+    <div class="shell stack-lg">
+      <div class="stack-sm">
+        <p class="eyebrow">Built for</p>
+        <h2 class="sect">Workloads we<br>see every day</h2>
+      </div>
+      <div class="cards cards-4">
+        <div class="card"><span class="k">01</span><h4>Model training</h4><p>Multi-node runs on 400G InfiniBand with NCCL tuned and checkpointing to local NVMe.</p></div>
+        <div class="card"><span class="k">02</span><h4>Inference at scale</h4><p>Autoscaling endpoints with scale-to-zero, so idle traffic costs nothing overnight.</p></div>
+        <div class="card"><span class="k">03</span><h4>Fine-tuning</h4><p>Single-node A100 and L40S pods for LoRA and full fine-tunes, priced for iteration.</p></div>
+        <div class="card"><span class="k">04</span><h4>Render and simulation</h4><p>RTX 6000 Ada farms for VFX, CAD and CFD, with shared project volumes.</p></div>
+      </div>
+      <div class="btnrow"><a href="#/solutions" class="btn btn-ghost">See all workloads <span class="ar">↗</span></a></div>
+    </div>
+  </div>
+
+  <div class="cta pad">
+    <div class="shell stack" style="text-align:center;max-width:760px">
+      <p class="eyebrow" style="text-align:center">Capacity is live now</p>
+      <h2 class="sect" style="font-size:clamp(2rem,5vw,3.4rem)">Start on one GPU.<br>Grow to a cluster.</h2>
+      <p class="lede" style="margin:0 auto">On-demand needs a card and an email. Reserved capacity needs a conversation — usually a short one.</p>
+      <div class="btnrow" style="justify-content:center">
+        <a href="#/docs" class="btn btn-primary">Deploy a pod <span class="ar">↗</span></a>
+        <a href="#/pricing" class="btn btn-ghost">See pricing</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== GPU ===================== -->
+<section class="page" data-page="/gpu">
+  <div class="shell hero">
+    <div class="stack" style="max-width:820px">
+      <p class="eyebrow">GPU as a Service &nbsp;·&nbsp; <b>GPUaaS</b></p>
+      <h1>One card or<br>five hundred</h1>
+      <p class="lede">Containerised pods for iteration, bare metal for production, and interconnected clusters when a single node stops being enough. Same catalogue, same console, same bill.</p>
+      <div class="btnrow">
+        <a href="#/pricing" class="btn btn-primary">See GPU pricing <span class="ar">↗</span></a>
+        <a href="#/contact" class="btn btn-ghost">Reserve capacity</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="band pad" style="margin-top:56px">
+    <div class="shell stack-lg">
+      <div class="stack-sm">
+        <p class="eyebrow">Catalogue</p>
+        <h2 class="sect">Available today</h2>
+      </div>
+      <div class="tblwrap">
+        <table>
+          <thead><tr><th>Accelerator</th><th>Memory</th><th>Interconnect</th><th>Best for</th><th>On-demand</th><th>Region</th></tr></thead>
+          <tbody>
+            <tr><td class="name">NVIDIA H200 SXM</td><td class="dim">141 GB HBM3e</td><td class="dim">NVLink + 400G IB</td><td>Frontier-scale training</td><td class="rate">₹319 /hr</td><td class="dim">BOM1 · PNQ1</td></tr>
+            <tr><td class="name">NVIDIA H100 SXM</td><td class="dim">80 GB HBM3</td><td class="dim">NVLink + 400G IB</td><td>Multi-node training</td><td class="rate">₹239 /hr</td><td class="dim">BOM1 · PNQ1 · MAA1</td></tr>
+            <tr><td class="name">NVIDIA H100 PCIe</td><td class="dim">80 GB HBM3</td><td class="dim">PCIe Gen5</td><td>Single-node training</td><td class="rate">₹199 /hr</td><td class="dim">All regions</td></tr>
+            <tr><td class="name">NVIDIA A100 SXM</td><td class="dim">80 GB HBM2e</td><td class="dim">NVLink + 200G IB</td><td>Fine-tuning, HPC</td><td class="rate">₹149 /hr</td><td class="dim">All regions</td></tr>
+            <tr><td class="name">NVIDIA L40S</td><td class="dim">48 GB GDDR6</td><td class="dim">PCIe Gen4</td><td>Inference, render</td><td class="rate">₹99 /hr</td><td class="dim">All regions</td></tr>
+            <tr><td class="name">NVIDIA RTX 6000 Ada</td><td class="dim">48 GB GDDR6</td><td class="dim">PCIe Gen4</td><td>Visualisation, CAD</td><td class="rate">₹79 /hr</td><td class="dim">PNQ1 · DEL1</td></tr>
+            <tr><td class="name">NVIDIA RTX 4090</td><td class="dim">24 GB GDDR6X</td><td class="dim">PCIe Gen4</td><td>Development, LoRA</td><td class="rate">₹44 /hr</td><td class="dim">PNQ1 · DEL1</td></tr>
+            <tr><td class="name">AMD Instinct MI300X</td><td class="dim">192 GB HBM3</td><td class="dim">Infinity Fabric</td><td>Large-context inference</td><td class="rate">₹269 /hr</td><td class="dim">BOM1</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="note">Rates are per GPU-hour, billed per second, exclusive of GST. Reserved and committed terms are lower — see pricing.</p>
+    </div>
+  </div>
+
+  <div class="band band-tint pad">
+    <div class="shell railed">
+      <div class="rail"><div class="rail-u">U38</div></div>
+      <div class="rbody stack-lg">
+        <div class="stack-sm">
+          <p class="eyebrow">Three shapes</p>
+          <h2 class="sect">Pick how close<br>to the metal</h2>
+        </div>
+        <div class="cards cards-3">
+          <div class="card"><span class="k">Pods</span><h4>Containerised</h4><p>Your image, our scheduler. Starts in about 40 seconds, stops when idle, and bills only while running. This is where most teams begin.</p></div>
+          <div class="card"><span class="k">Bare metal</span><h4>Whole machines</h4><p>Root on the host, no hypervisor tax, your own drivers and kernel. Monthly or longer, with the NICs and NVMe wired the way you specify.</p></div>
+          <div class="card"><span class="k">Clusters</span><h4>Interconnected</h4><p>16 to 512 GPUs on non-blocking 400G InfiniBand, delivered as a named environment with Slurm or Kubernetes already running.</p></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="band pad">
+    <div class="shell split split-t">
+      <div class="stack">
+        <p class="eyebrow">Cluster engineering</p>
+        <h2 class="sect">Fabric that<br>actually scales</h2>
+        <p class="lede">A rack of H100s is not a cluster. Getting linear scaling out of sixty-four nodes is a topology and tuning problem, and it is the part we do for you before handover.</p>
+        <ul class="bullets">
+          <li><b>Rail-optimised fat tree</b> — non-blocking, with SHARP in-network reduction on supported fabrics</li>
+          <li><b>NCCL tuned per topology</b> — we hand you the benchmark numbers, not a brochure</li>
+          <li><b>GPUDirect Storage</b> — checkpoints stream to NVMe without a bounce through host memory</li>
+          <li><b>Health-checked nodes</b> — every node passes a burn-in and DCGM suite before it enters your pool</li>
+          <li><b>Slurm or Kubernetes</b> — your choice, configured, with the operator stack in place</li>
+        </ul>
+      </div>
+      <div class="stack">
+        <div class="code">
+          <div class="code-h"><span>nccl-tests — 64× H100 SXM, BOM1</span><span class="mono" style="color:var(--signal)">verified</span></div>
+          <div class="code-b"><span class="c"># all_reduce_perf -b 8 -e 8G -f 2 -g 8</span><br><br>
+size(B)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;time(us)&nbsp;&nbsp;&nbsp;busbw(GB/s)<br>
+<span class="k">1073741824</span>&nbsp;&nbsp;&nbsp;4812.3&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="s">371.4</span><br>
+<span class="k">2147483648</span>&nbsp;&nbsp;&nbsp;9503.7&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="s">376.1</span><br>
+<span class="k">4294967296</span>&nbsp;&nbsp;18871.2&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="s">378.9</span><br>
+<span class="k">8589934592</span>&nbsp;&nbsp;37622.8&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="s">380.2</span><br><br>
+<span class="c"># scaling efficiency 8 → 64 nodes: 94.1%</span></div>
+        </div>
+        <p class="note">Representative figures from an acceptance run. We publish yours before you sign anything.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="cta pad">
+    <div class="shell stack" style="text-align:center;max-width:720px">
+      <h2 class="sect" style="font-size:clamp(1.9rem,4.6vw,3rem)">Need more than<br>a single node?</h2>
+      <p class="lede" style="margin:0 auto">Tell us the model size and the deadline. We'll come back with a topology, a price and a date.</p>
+      <div class="btnrow" style="justify-content:center"><a href="#/contact" class="btn btn-primary">Talk to capacity planning <span class="ar">↗</span></a></div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== COMPUTE ===================== -->
+<section class="page" data-page="/compute">
+  <div class="shell hero">
+    <div class="stack" style="max-width:820px">
+      <p class="eyebrow">Compute as a Service &nbsp;·&nbsp; <b>CaaS</b></p>
+      <h1>CPU that<br>keeps up</h1>
+      <p class="lede">GPUs are useless if the data pipeline stalls. Our compute tier sits on the same leaf switches as the accelerators, so preprocessing, serving and databases stay next to the work.</p>
+      <div class="btnrow">
+        <a href="#/pricing" class="btn btn-primary">See compute pricing <span class="ar">↗</span></a>
+        <a href="#/docs" class="btn btn-ghost">Read the docs</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="band pad" style="margin-top:56px">
+    <div class="shell stack-lg">
+      <div class="stack-sm">
+        <p class="eyebrow">Instance families</p>
+        <h2 class="sect">Four shapes,<br>no surprises</h2>
+      </div>
+      <div class="tblwrap">
+        <table>
+          <thead><tr><th>Family</th><th>Processor</th><th>vCPU : RAM</th><th>Local disk</th><th>Network</th><th>From</th></tr></thead>
+          <tbody>
+            <tr><td class="name">C — Compute</td><td class="dim">EPYC 9004 / Xeon 6</td><td class="dim">1 : 2 GB</td><td class="dim">NVMe optional</td><td class="dim">25 Gbps</td><td class="rate">₹1.10 /vCPU-hr</td></tr>
+            <tr><td class="name">M — Balanced</td><td class="dim">EPYC 9004</td><td class="dim">1 : 4 GB</td><td class="dim">NVMe optional</td><td class="dim">25 Gbps</td><td class="rate">₹1.35 /vCPU-hr</td></tr>
+            <tr><td class="name">R — Memory</td><td class="dim">EPYC 9004</td><td class="dim">1 : 8 GB</td><td class="dim">NVMe optional</td><td class="dim">50 Gbps</td><td class="rate">₹1.90 /vCPU-hr</td></tr>
+            <tr><td class="name">I — Storage</td><td class="dim">EPYC 9004</td><td class="dim">1 : 4 GB</td><td class="dim">up to 30 TB NVMe</td><td class="dim">100 Gbps</td><td class="rate">₹2.40 /vCPU-hr</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="note">RAM billed separately at ₹0.55 per GB-hour. Dedicated hosts and bare metal quoted monthly.</p>
+    </div>
+  </div>
+
+  <div class="band band-tint pad">
+    <div class="shell stack-lg">
+      <div class="stack-sm">
+        <p class="eyebrow">How it runs</p>
+        <h2 class="sect">Virtual, dedicated<br>or bare</h2>
+      </div>
+      <div class="cards cards-3">
+        <div class="card"><span class="k">Instances</span><h4>Virtual machines</h4><p>KVM with SR-IOV networking and passthrough NVMe. Snapshots, resize in place, and images that boot in under twenty seconds.</p></div>
+        <div class="card"><span class="k">Dedicated</span><h4>Single-tenant hosts</h4><p>A whole physical host reserved to you, so noisy neighbours and licensing audits both stop being a topic.</p></div>
+        <div class="card"><span class="k">Metal</span><h4>Bare metal</h4><p>PXE, your image, your kernel. IPMI and serial console exposed, with the NIC and disk layout you asked for.</p></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="band pad">
+    <div class="shell split split-t">
+      <div class="stack">
+        <p class="eyebrow">Networking</p>
+        <h2 class="sect">Private by<br>default</h2>
+        <ul class="bullets">
+          <li><b>VPC per project</b> — routed subnets, security groups, no shared broadcast domain</li>
+          <li><b>Internal traffic is free</b> — between instances, pods and storage, in any volume</li>
+          <li><b>Direct connect</b> — cross-connect to your own cage, or a private circuit to your office</li>
+          <li><b>DDoS scrubbing</b> — always on at the edge, included, not an upsell tier</li>
+          <li><b>Floating IPs</b> — reassign a public address between hosts without a DNS wait</li>
+        </ul>
+      </div>
+      <div class="stack">
+        <p class="eyebrow">Also included</p>
+        <div class="cards cards-2">
+          <div class="card"><span class="k">Backup</span><h4>Scheduled snapshots</h4><p>Policy-driven, cross-site, restorable to a new instance in minutes.</p></div>
+          <div class="card"><span class="k">Monitor</span><h4>Metrics and logs</h4><p>Prometheus-compatible endpoints and 30 days of retention, no agent licence.</p></div>
+          <div class="card"><span class="k">IAM</span><h4>Roles and keys</h4><p>SSO via SAML or OIDC, scoped API keys, and a full audit trail per project.</p></div>
+          <div class="card"><span class="k">Quotas</span><h4>Spend controls</h4><p>Hard caps per project so an experiment can't turn into an invoice.</p></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="cta pad">
+    <div class="shell stack" style="text-align:center;max-width:720px">
+      <h2 class="sect" style="font-size:clamp(1.9rem,4.6vw,3rem)">Migrating from<br>somewhere else?</h2>
+      <p class="lede" style="margin:0 auto">We do the assessment, the move and the cutover. Most workloads land inside a fortnight.</p>
+      <div class="btnrow" style="justify-content:center"><a href="#/contact" class="btn btn-primary">Plan a migration <span class="ar">↗</span></a></div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== STORAGE ===================== -->
+<section class="page" data-page="/storage">
+  <div class="shell hero">
+    <div class="stack" style="max-width:820px">
+      <p class="eyebrow">Storage as a Service &nbsp;·&nbsp; <b>StaaS</b></p>
+      <h1>Free to<br>read. Free<br>to leave.</h1>
+      <p class="lede">Three tiers on one namespace, sitting on the same fabric as your GPUs. We don't charge for egress, requests or retrieval — the price on the tier is the price you pay.</p>
+      <div class="btnrow">
+        <a href="#/pricing" class="btn btn-primary">See storage pricing <span class="ar">↗</span></a>
+        <a href="#/docs" class="btn btn-ghost">S3 API reference</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="band pad" style="margin-top:56px">
+    <div class="shell stack-lg">
+      <div class="stack-sm">
+        <p class="eyebrow">Tiers</p>
+        <h2 class="sect">Hot, warm, cold</h2>
+      </div>
+      <div class="tblwrap">
+        <table>
+          <thead><tr><th>Tier</th><th>Media</th><th>Access</th><th>Durability</th><th>Typical use</th><th>Price</th></tr></thead>
+          <tbody>
+            <tr><td class="name">Block NVMe</td><td class="dim">TLC NVMe, triple replica</td><td class="dim">&lt; 200 µs</td><td class="dim">11 nines</td><td>Databases, scratch, checkpoints</td><td class="rate">₹8.00 /GB-mo</td></tr>
+            <tr><td class="name">Object Standard</td><td class="dim">NVMe + HDD, EC 8+3</td><td class="dim">&lt; 25 ms</td><td class="dim">11 nines</td><td>Datasets, model registry, media</td><td class="rate">₹1.60 /GB-mo</td></tr>
+            <tr><td class="name">Object Archive</td><td class="dim">HDD, EC 12+4</td><td class="dim">minutes</td><td class="dim">11 nines</td><td>Compliance retention, cold backup</td><td class="rate">₹0.40 /GB-mo</td></tr>
+            <tr><td class="name">Shared filesystem</td><td class="dim">Parallel NVMe, NFS/Lustre</td><td class="dim">&lt; 400 µs</td><td class="dim">11 nines</td><td>Multi-node training, render farms</td><td class="rate">₹6.20 /GB-mo</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="note">No charge for egress, PUT, GET, LIST or early deletion. Cross-region replication billed at the destination tier only.</p>
+    </div>
+  </div>
+
+  <div class="band band-tint pad">
+    <div class="shell split split-t">
+      <div class="stack">
+        <p class="eyebrow">Compatibility</p>
+        <h2 class="sect">It speaks S3,<br>so nothing<br>changes</h2>
+        <p class="lede">Point your existing SDK at a new endpoint. Signature v4, multipart, versioning, lifecycle rules, presigned URLs and object lock all behave the way your code already expects.</p>
+        <div class="chips">
+          <span class="chip">boto3</span><span class="chip">aws-cli</span><span class="chip">rclone</span><span class="chip">MinIO SDK</span>
+          <span class="chip">s3fs</span><span class="chip">Terraform</span><span class="chip">Velero</span><span class="chip">DVC</span>
+        </div>
+      </div>
+      <div class="code">
+        <div class="code-h"><span>python — same code, new endpoint</span><button class="copy" data-copy="s3 = boto3.client('s3', endpoint_url='https://s3.bom1.mslproducts.com')">Copy</button></div>
+        <div class="code-b"><span class="k">import</span> boto3<br><br>
+s3 = boto3.<span class="k">client</span>(<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="s">"s3"</span>,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;endpoint_url=<span class="s">"https://s3.bom1.mslproducts.com"</span>,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;region_name=<span class="s">"bom1"</span>,<br>
+)<br><br>
+s3.<span class="k">upload_file</span>(<span class="s">"ckpt-4200.safetensors"</span>,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="s">"runs"</span>, <span class="s">"llama-ft/ckpt-4200"</span>)<br><br>
+<span class="c"># 41.2 GB in 3m12s · egress charge ₹0.00</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="band pad">
+    <div class="shell stack-lg">
+      <div class="stack-sm">
+        <p class="eyebrow">Protection</p>
+        <h2 class="sect">Assume the<br>worst happens</h2>
+      </div>
+      <div class="cards cards-4">
+        <div class="card"><span class="k">Encryption</span><h4>AES-256 at rest</h4><p>Per-bucket keys, or bring your own through our KMS. TLS 1.3 in flight, always.</p></div>
+        <div class="card"><span class="k">Immutability</span><h4>Object lock</h4><p>WORM retention with legal hold, for auditors who need writes to be irreversible.</p></div>
+        <div class="card"><span class="k">Replication</span><h4>Cross-site copies</h4><p>Asynchronous replication between Mumbai, Pune and Chennai on a bucket rule.</p></div>
+        <div class="card"><span class="k">Recovery</span><h4>Tested restores</h4><p>Quarterly restore drills with a written report, because an untested backup isn't one.</p></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== PLATFORM ===================== -->
+<section class="page" data-page="/platform">
+  <div class="shell hero">
+    <div class="stack" style="max-width:820px">
+      <p class="eyebrow">Platform as a Service &nbsp;·&nbsp; <b>PaaS</b></p>
+      <h1>The layer<br>above the<br>metal</h1>
+      <p class="lede">Managed Kubernetes, serverless inference endpoints, a model registry and a job scheduler. Run them, or don't — the infrastructure underneath works either way.</p>
+      <div class="btnrow">
+        <a href="#/docs" class="btn btn-primary">Platform docs <span class="ar">↗</span></a>
+        <a href="#/contact" class="btn btn-ghost">Book a walkthrough</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="band pad" style="margin-top:56px">
+    <div class="shell">
+      <div class="stack-sm" style="margin-bottom:40px">
+        <p class="eyebrow">Architecture</p>
+        <h2 class="sect">How the stack<br>fits together</h2>
+      </div>
+      <div class="notch" style="padding:34px 26px">
+        <svg viewBox="0 0 900 340" style="width:100%;height:auto" role="img" aria-label="MSL platform stack: applications on managed services, on compute, GPU and storage, on the datacenter fabric">
+          <defs>
+            <linearGradient id="lg" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0" stop-color="#2E6BFF" stop-opacity=".22"/>
+              <stop offset="1" stop-color="#4DE1FF" stop-opacity=".07"/>
+            </linearGradient>
+          </defs>
+          <g font-family="IBM Plex Mono, monospace" font-size="11" letter-spacing="1.4">
+            <!-- layer 1 -->
+            <rect x="20" y="16" width="860" height="52" fill="none" stroke="rgba(255,255,255,.14)"/>
+            <text x="36" y="38" fill="#63718A">YOUR WORKLOAD</text>
+            <text x="36" y="56" fill="#EDF1F7" font-size="13">Training jobs · Inference services · Databases · Pipelines</text>
+            <!-- layer 2 -->
+            <rect x="20" y="84" width="860" height="76" fill="url(#lg)" stroke="rgba(46,107,255,.4)"/>
+            <text x="36" y="106" fill="#4DE1FF">MSL PLATFORM SERVICES</text>
+            <g fill="#EDF1F7" font-size="12">
+              <rect x="36" y="118" width="180" height="28" fill="rgba(255,255,255,.04)" stroke="rgba(255,255,255,.1)"/>
+              <text x="50" y="136">Managed Kubernetes</text>
+              <rect x="228" y="118" width="180" height="28" fill="rgba(255,255,255,.04)" stroke="rgba(255,255,255,.1)"/>
+              <text x="242" y="136">Serverless endpoints</text>
+              <rect x="420" y="118" width="180" height="28" fill="rgba(255,255,255,.04)" stroke="rgba(255,255,255,.1)"/>
+              <text x="434" y="136">Model registry</text>
+              <rect x="612" y="118" width="232" height="28" fill="rgba(255,255,255,.04)" stroke="rgba(255,255,255,.1)"/>
+              <text x="626" y="136">Batch scheduler (Slurm)</text>
+            </g>
+            <!-- layer 3 -->
+            <rect x="20" y="176" width="278" height="72" fill="none" stroke="rgba(255,255,255,.14)"/>
+            <text x="36" y="198" fill="#63718A">GPUaaS</text>
+            <text x="36" y="222" fill="#EDF1F7" font-size="13">H200 · H100 · L40S · MI300X</text>
+            <text x="36" y="240" fill="#63718A" font-size="10">PODS / METAL / CLUSTERS</text>
+
+            <rect x="311" y="176" width="278" height="72" fill="none" stroke="rgba(255,255,255,.14)"/>
+            <text x="327" y="198" fill="#63718A">CaaS</text>
+            <text x="327" y="222" fill="#EDF1F7" font-size="13">EPYC 9004 · Xeon 6</text>
+            <text x="327" y="240" fill="#63718A" font-size="10">VM / DEDICATED / METAL</text>
+
+            <rect x="602" y="176" width="278" height="72" fill="none" stroke="rgba(255,255,255,.14)"/>
+            <text x="618" y="198" fill="#63718A">StaaS</text>
+            <text x="618" y="222" fill="#EDF1F7" font-size="13">Block · Object · Archive · FS</text>
+            <text x="618" y="240" fill="#63718A" font-size="10">ZERO EGRESS</text>
+            <!-- connectors -->
+            <g stroke="rgba(46,107,255,.5)" stroke-width="1">
+              <path d="M159 176 L159 160"/><path d="M450 176 L450 160"/><path d="M741 176 L741 160"/>
+              <path d="M450 84 L450 68"/>
+            </g>
+            <!-- layer 4 -->
+            <rect x="20" y="264" width="860" height="58" fill="rgba(255,255,255,.02)" stroke="rgba(255,255,255,.14)"/>
+            <text x="36" y="286" fill="#63718A">MSL DATACENTER FABRIC</text>
+            <text x="36" y="306" fill="#EDF1F7" font-size="13">400G InfiniBand · 100G Ethernet · Tier III power &amp; cooling · BOM1 PNQ1 MAA1 DEL1</text>
+            <g stroke="rgba(255,255,255,.14)"><path d="M159 264 L159 248"/><path d="M450 264 L450 248"/><path d="M741 264 L741 248"/></g>
+          </g>
+        </svg>
+      </div>
+    </div>
+  </div>
+
+  <div class="band band-tint pad">
+    <div class="shell stack-lg">
+      <div class="stack-sm">
+        <p class="eyebrow">Managed services</p>
+        <h2 class="sect">Things you'd<br>rather not run</h2>
+      </div>
+      <div class="cards cards-2">
+        <div class="card"><span class="k">MSL Kubernetes</span><h4>Conformant, GPU-aware</h4><p>Upstream Kubernetes with the NVIDIA operator, MIG partitioning, cluster autoscaling and the CSI drivers for our block and file tiers already wired in. We patch the control plane; you keep the kubeconfig.</p></div>
+        <div class="card"><span class="k">Endpoints</span><h4>Serverless inference</h4><p>Push a container, get an HTTPS endpoint that scales from zero to hundreds of replicas on queue depth. Cold start on a warm pool is under four seconds, and idle costs nothing.</p></div>
+        <div class="card"><span class="k">Registry</span><h4>Models and images</h4><p>An OCI registry and a versioned model store in-region, so pulls happen over the internal fabric instead of the public internet. Signing and vulnerability scanning included.</p></div>
+        <div class="card"><span class="k">Scheduler</span><h4>Batch and queues</h4><p>Slurm or Kueue on your reserved capacity, with fair-share across teams, priority pre-emption and per-project accounting that maps to your chargeback model.</p></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="band pad">
+    <div class="shell stack-lg">
+      <div class="stack-sm">
+        <p class="eyebrow">Getting on</p>
+        <h2 class="sect">A typical<br>onboarding</h2>
+        <p class="lede">This is the actual sequence, not a marketing funnel. Most teams are running real work in week two.</p>
+      </div>
+      <div class="steps">
+        <div class="step"><span class="n">STEP 01</span><h4>Scoping</h4><p>An engineer walks through your workload, current spend and residency constraints. You get a sizing and a written quote, usually within three working days.</p></div>
+        <div class="step"><span class="n">STEP 02</span><h4>Landing zone</h4><p>We build the VPC, projects, IAM roles and quotas, connect your SSO, and run a benchmark on the exact shape you'll be using.</p></div>
+        <div class="step"><span class="n">STEP 03</span><h4>Cutover</h4><p>Data seeding over direct connect or a shipped appliance, a parallel run against your current provider, then a scheduled switch.</p></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== SOLUTIONS ===================== -->
+<section class="page" data-page="/solutions">
+  <div class="shell hero">
+    <div class="stack" style="max-width:820px">
+      <p class="eyebrow">Solutions</p>
+      <h1>What people<br>run on us</h1>
+      <p class="lede">Written by workload, not by industry vertical, because the shape of the job determines the shape of the infrastructure far more than the sector does.</p>
+    </div>
+  </div>
+
+  <div class="band pad" style="margin-top:56px">
+    <div class="shell stack-lg">
+      <div class="stack-sm"><p class="eyebrow">By workload</p><h2 class="sect">Six patterns</h2></div>
+      <div class="cards cards-3">
+        <div class="card"><span class="k">AI / ML</span><h4>Foundation model training</h4><p>Reserved H200 or H100 clusters on 400G InfiniBand, parallel filesystem for checkpoints, Slurm for queueing. Sized by parameter count and token budget.</p></div>
+        <div class="card"><span class="k">AI / ML</span><h4>Inference serving</h4><p>L40S or MI300X behind autoscaling endpoints, with scale-to-zero for spiky traffic and MIG partitioning when a whole card is too much.</p></div>
+        <div class="card"><span class="k">AI / ML</span><h4>Fine-tuning and RAG</h4><p>Single-node A100 or L40S pods, a vector database on NVMe block, and the dataset sitting in object storage in the same region.</p></div>
+        <div class="card"><span class="k">Media</span><h4>Render and VFX</h4><p>RTX 6000 Ada farms with a shared project filesystem, burst capacity for delivery weeks, and no egress bill on the final master.</p></div>
+        <div class="card"><span class="k">Engineering</span><h4>Simulation and HPC</h4><p>CFD, FEA and EDA on memory-heavy nodes with low-latency interconnect. Licence-server friendly, with dedicated hosts where the vendor demands it.</p></div>
+        <div class="card"><span class="k">Enterprise IT</span><h4>Private cloud and DR</h4><p>VMs, dedicated hosts and cross-site replication for teams leaving on-premise hardware without leaving the jurisdiction.</p></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="band band-tint pad">
+    <div class="shell railed">
+      <div class="rail"><div class="rail-u">U26</div></div>
+      <div class="rbody stack-lg">
+        <div class="stack-sm">
+          <p class="eyebrow">By sector</p>
+          <h2 class="sect">Where residency<br>is the point</h2>
+          <p class="lede">Some industries can't put the question aside. For these, in-country infrastructure isn't a preference — it's the condition of doing the project at all.</p>
+        </div>
+        <div class="cards cards-3">
+          <div class="card"><span class="k">BFSI</span><h4>Banking and insurance</h4><p>RBI localisation for payment data, cyber-security framework alignment, and audit evidence your regulator will accept.</p></div>
+          <div class="card"><span class="k">Public sector</span><h4>Government and PSU</h4><p>MeitY-empanelled capacity with GeM procurement, and deployment models that keep classified workloads on dedicated hardware.</p></div>
+          <div class="card"><span class="k">Healthcare</span><h4>Providers and pharma</h4><p>DPDP-compliant handling of patient data, with imaging and genomics pipelines close to the storage that holds them.</p></div>
+          <div class="card"><span class="k">Manufacturing</span><h4>Industrial and auto</h4><p>Simulation clusters and edge-to-core pipelines that keep design IP inside the corporate boundary.</p></div>
+          <div class="card"><span class="k">Media</span><h4>Studios and OTT</h4><p>Render capacity that scales for a delivery window and drops back afterwards, with masters that cost nothing to retrieve.</p></div>
+          <div class="card"><span class="k">Startups</span><h4>AI-native companies</h4><p>Start on a card, grow to a cluster, and keep the same API. Credits and reserved pricing available through our accelerator programme.</p></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="cta pad">
+    <div class="shell stack" style="text-align:center;max-width:720px">
+      <h2 class="sect" style="font-size:clamp(1.9rem,4.6vw,3rem)">Not sure which<br>shape you need?</h2>
+      <p class="lede" style="margin:0 auto">Describe the workload. We'll size it, benchmark it and tell you honestly if we're the wrong fit.</p>
+      <div class="btnrow" style="justify-content:center"><a href="#/contact" class="btn btn-primary">Start a conversation <span class="ar">↗</span></a></div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== INFRASTRUCTURE ===================== -->
+<section class="page" data-page="/infrastructure">
+  <div class="shell hero">
+    <div class="stack" style="max-width:820px">
+      <p class="eyebrow">Datacenters</p>
+      <h1>Buildings<br>we can<br>show you</h1>
+      <p class="lede">Four regions, all in India, all Tier III or better. You can visit any of them — bring your auditor, we'll book the escort.</p>
+      <div class="btnrow"><a href="#/contact" class="btn btn-ghost">Request a site visit <span class="ar">↗</span></a></div>
+    </div>
+  </div>
+
+  <div class="band pad" style="margin-top:56px">
+    <div class="shell stack-lg">
+      <div class="stack-sm"><p class="eyebrow">Regions</p><h2 class="sect">Where the<br>racks are</h2></div>
+      <div>
+        <div class="region"><span class="code-t">BOM1</span><div><div class="city">Mumbai — Navi Mumbai campus</div><div class="meta">Tier IV · 8 MW · H200 · H100 · MI300X · 400G IB</div></div><span class="tag">Live</span></div>
+        <div class="region"><span class="code-t">PNQ1</span><div><div class="city">Pune — Hinjawadi</div><div class="meta">Tier III · 5 MW · H200 · H100 · L40S · RTX 6000 Ada</div></div><span class="tag">Live</span></div>
+        <div class="region"><span class="code-t">MAA1</span><div><div class="city">Chennai — Ambattur</div><div class="meta">Tier III · 3 MW · H100 · A100 · L40S · subsea landing adjacent</div></div><span class="tag">Live</span></div>
+        <div class="region"><span class="code-t">DEL1</span><div><div class="city">Noida — Sector 62</div><div class="meta">Tier III · 2 MW · A100 · L40S · RTX 6000 Ada</div></div><span class="tag">Live</span></div>
+        <div class="region"><span class="code-t">HYD1</span><div><div class="city">Hyderabad — Shamshabad</div><div class="meta">Tier III · 6 MW planned · liquid-cooled GPU halls</div></div><span class="tag soon">Q1 2027</span></div>
+        <div class="region"><span class="code-t">BLR1</span><div><div class="city">Bengaluru — Whitefield</div><div class="meta">Tier III · 4 MW planned · inference and edge</div></div><span class="tag soon">Q3 2027</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="band band-tint pad">
+    <div class="shell stack-lg">
+      <div class="stack-sm"><p class="eyebrow">Facility</p><h2 class="sect">Power, cooling,<br>and the boring<br>redundancy</h2></div>
+      <div class="cards cards-4">
+        <div class="card"><span class="k">Power</span><h4>2N to the rack</h4><p>Dual utility feeds, N+1 generators with 72 hours of fuel on site, and A/B PDUs on every cabinet.</p></div>
+        <div class="card"><span class="k">Cooling</span><h4>Up to 120 kW per rack</h4><p>Rear-door heat exchangers on the GPU halls, direct-to-chip liquid on the H200 rows, N+1 chillers throughout.</p></div>
+        <div class="card"><span class="k">Network</span><h4>Diverse fibre paths</h4><p>Multiple carriers entering through separate conduits, with private peering at the major Indian exchanges.</p></div>
+        <div class="card"><span class="k">Physical</span><h4>Five-layer access</h4><p>Mantraps, biometrics, escorted visits and 90-day CCTV retention. Cages available for single-tenant deployments.</p></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="band pad">
+    <div class="shell split split-t">
+      <div class="stack">
+        <p class="eyebrow">Compliance</p>
+        <h2 class="sect">Evidence, not<br>assurances</h2>
+        <p class="lede">Certificates, audit reports and our shared-responsibility matrix are available under NDA through the trust portal. Ask and you'll have them the same day.</p>
+        <div class="chips">
+          <span class="chip">ISO/IEC 27001</span><span class="chip">ISO 27017</span><span class="chip">ISO 27018</span>
+          <span class="chip">SOC 2 Type II</span><span class="chip">PCI DSS 4.0</span><span class="chip">MeitY empanelled</span>
+          <span class="chip">RBI localisation</span><span class="chip">DPDP Act 2023</span><span class="chip">CERT-In directions</span>
+          <span class="chip">Uptime Institute Tier III/IV</span>
+        </div>
+      </div>
+      <div class="stack">
+        <p class="eyebrow">Service commitments</p>
+        <div class="ledger" style="grid-template-columns:1fr 1fr">
+          <div><p class="v">99.99<s>%</s></p><p class="l">Compute availability</p></div>
+          <div><p class="v">99.99<s>9%</s></p><p class="l">Object storage availability</p></div>
+          <div><p class="v">&lt;15<s>min</s></p><p class="l">P1 response, 24×7</p></div>
+          <div><p class="v">30<s>×</s></p><p class="l">Credit multiplier on breach</p></div>
+        </div>
+        <p class="note">Full SLA terms published in the master service agreement — no separate negotiation needed to read them.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== PRICING ===================== -->
+<section class="page" data-page="/pricing">
+  <div class="shell hero">
+    <div class="stack" style="max-width:820px">
+      <p class="eyebrow">Pricing</p>
+      <h1>Published.<br>All of it.</h1>
+      <p class="lede">Every rate we charge is on this page. There is no egress line, no request line, no support tier you have to buy to get a human, and no minimum on on-demand.</p>
+      <div class="toggle" id="term">
+        <button class="on" data-term="on">On-demand</button>
+        <button data-term="res">Reserved 12 mo</button>
+        <button data-term="com">Committed 36 mo</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="band pad" style="margin-top:48px">
+    <div class="shell stack-lg">
+      <div class="stack-sm"><p class="eyebrow">GPU · per GPU-hour</p><h2 class="sect">Accelerators</h2></div>
+      <div class="tblwrap">
+        <table>
+          <thead><tr><th>Accelerator</th><th>Memory</th><th>Rate</th><th>Monthly equivalent</th></tr></thead>
+          <tbody id="gputbl">
+            <tr data-base="319"><td class="name">H200 SXM</td><td class="dim">141 GB</td><td class="rate">—</td><td class="dim">—</td></tr>
+            <tr data-base="239"><td class="name">H100 SXM</td><td class="dim">80 GB</td><td class="rate">—</td><td class="dim">—</td></tr>
+            <tr data-base="199"><td class="name">H100 PCIe</td><td class="dim">80 GB</td><td class="rate">—</td><td class="dim">—</td></tr>
+            <tr data-base="269"><td class="name">MI300X</td><td class="dim">192 GB</td><td class="rate">—</td><td class="dim">—</td></tr>
+            <tr data-base="149"><td class="name">A100 SXM</td><td class="dim">80 GB</td><td class="rate">—</td><td class="dim">—</td></tr>
+            <tr data-base="99"><td class="name">L40S</td><td class="dim">48 GB</td><td class="rate">—</td><td class="dim">—</td></tr>
+            <tr data-base="79"><td class="name">RTX 6000 Ada</td><td class="dim">48 GB</td><td class="rate">—</td><td class="dim">—</td></tr>
+            <tr data-base="44"><td class="name">RTX 4090</td><td class="dim">24 GB</td><td class="rate">—</td><td class="dim">—</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="note" id="termnote">On-demand · billed per second · no minimum term</p>
+    </div>
+  </div>
+
+  <div class="band pad">
+    <div class="shell stack-lg">
+      <div class="split split-t">
+        <div class="stack">
+          <div class="stack-sm"><p class="eyebrow">Compute</p><h2 class="sect">CPU and memory</h2></div>
+          <div class="tblwrap">
+            <table style="min-width:0">
+              <thead><tr><th>Resource</th><th>Rate</th></tr></thead>
+              <tbody>
+                <tr><td class="name">vCPU — C family</td><td class="rate">₹1.10 /hr</td></tr>
+                <tr><td class="name">vCPU — M family</td><td class="rate">₹1.35 /hr</td></tr>
+                <tr><td class="name">vCPU — R family</td><td class="rate">₹1.90 /hr</td></tr>
+                <tr><td class="name">vCPU — I family</td><td class="rate">₹2.40 /hr</td></tr>
+                <tr><td class="name">Memory</td><td class="rate">₹0.55 /GB-hr</td></tr>
+                <tr><td class="name">Public IPv4</td><td class="rate">₹180 /month</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="stack">
+          <div class="stack-sm"><p class="eyebrow">Storage</p><h2 class="sect">Capacity</h2></div>
+          <div class="tblwrap">
+            <table style="min-width:0">
+              <thead><tr><th>Tier</th><th>Rate</th></tr></thead>
+              <tbody>
+                <tr><td class="name">Block NVMe</td><td class="rate">₹8.00 /GB-mo</td></tr>
+                <tr><td class="name">Shared filesystem</td><td class="rate">₹6.20 /GB-mo</td></tr>
+                <tr><td class="name">Object Standard</td><td class="rate">₹1.60 /GB-mo</td></tr>
+                <tr><td class="name">Object Archive</td><td class="rate">₹0.40 /GB-mo</td></tr>
+                <tr><td class="name">Snapshots</td><td class="rate">₹1.60 /GB-mo</td></tr>
+                <tr><td class="name">Egress · requests</td><td class="rate">₹0.00</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      <p class="note">All rates exclusive of GST. Billing is per second for compute and GPU, per GB-month prorated daily for storage.</p>
+    </div>
+  </div>
+
+  <div class="band band-tint pad">
+    <div class="shell stack-lg">
+      <div class="stack-sm"><p class="eyebrow">Included at every size</p><h2 class="sect">Not an upsell</h2></div>
+      <div class="cards cards-4">
+        <div class="card"><h4>Data egress</h4><p>Unmetered, in and out, across every service.</p></div>
+        <div class="card"><h4>Internal traffic</h4><p>Free between compute, GPU and storage in a region.</p></div>
+        <div class="card"><h4>24×7 support</h4><p>Humans on chat, phone and email. No paid tier.</p></div>
+        <div class="card"><h4>DDoS protection</h4><p>Always on at the edge, no scrubbing surcharge.</p></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="band pad">
+    <div class="shell">
+      <div class="stack-sm" style="margin-bottom:34px"><p class="eyebrow">Questions we get asked</p><h2 class="sect">Billing, plainly</h2></div>
+      <div class="faq">
+        <details><summary>Is there really no egress charge?</summary><p>Correct. We don't meter data leaving our network, on any service. Our transit is a fixed cost we already carry, and metering it is a commercial choice rather than a physical one. If you push sustained multi-gigabit traffic we'll talk about a dedicated port, but there's no per-gigabyte line on the invoice.</p></details>
+        <details><summary>How does per-second billing actually work?</summary><p>A pod or instance accrues charges from the moment it reaches a running state to the moment it stops. Stopped instances are billed for attached storage only. There's no rounding to the hour and no minimum runtime, so a four-minute test costs four minutes.</p></details>
+        <details><summary>What's the difference between reserved and committed?</summary><p>Reserved holds specific capacity for you at a discounted rate for twelve months, billed whether or not you use it. Committed is a thirty-six month spend commitment across any service, with the deepest rates and flexibility to move between GPU types as your workload changes.</p></details>
+        <details><summary>Do you accept GeM and standard enterprise procurement?</summary><p>Yes. We're listed on GeM for public-sector buyers, and we work with the usual enterprise instruments — POs, monthly consolidated invoicing in INR, credit terms and MSA-based contracting. Startups can also pay by card with no contract at all.</p></details>
+        <details><summary>Can I get credits to evaluate?</summary><p>Yes. Every new account gets evaluation credits, and if you're benchmarking against another provider we'll usually fund a proper comparison run rather than a token trial. Ask for it directly.</p></details>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== DOCS ===================== -->
+<section class="page" data-page="/docs">
+  <div class="shell hero">
+    <div class="stack" style="max-width:820px">
+      <p class="eyebrow">Developers</p>
+      <h1>Start here</h1>
+      <p class="lede">Sign up, get a key, run one command. The full reference lives in the docs site; this is the shortest path from zero to a running GPU.</p>
+    </div>
+  </div>
+
+  <div class="band pad" style="margin-top:56px">
+    <div class="shell stack-lg">
+      <div class="stack-sm"><p class="eyebrow">Quickstart</p><h2 class="sect">Zero to GPU</h2></div>
+      <div class="steps">
+        <div class="step"><span class="n">STEP 01</span><h4>Create an account</h4><p>A company email and a payment method. Verification is automatic for most domains; regulated sectors get a short KYC step instead.</p></div>
+        <div class="step"><span class="n">STEP 02</span><h4>Issue an API key</h4><p>Scoped to a project and a role. Keys can be rotated, expired and audited from the console or the API.</p></div>
+        <div class="step"><span class="n">STEP 03</span><h4>Launch a pod</h4><p>One command with a GPU type, a count and an image. SSH details and a Jupyter URL come back in the response.</p></div>
+      </div>
+      <div class="split split-t">
+        <div class="code">
+          <div class="code-h"><span>rest — create a pod</span><button class="copy" data-copy="curl -X POST https://api.mslproducts.com/v1/pods -H 'Authorization: Bearer $MSL_API_KEY'">Copy</button></div>
+          <div class="code-b">$ curl -X POST <span class="s">https://api.mslproducts.com/v1/pods</span> \<br>
+&nbsp;&nbsp;-H <span class="s">"Authorization: Bearer $MSL_API_KEY"</span> \<br>
+&nbsp;&nbsp;-H <span class="s">"Content-Type: application/json"</span> \<br>
+&nbsp;&nbsp;-d <span class="s">'{</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="s">"gpu": "l40s",</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="s">"count": 1,</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="s">"image": "msl/vllm:0.6",</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="s">"region": "pnq1",</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="s">"idle_timeout_s": 900</span><br>
+&nbsp;&nbsp;<span class="s">}'</span><br><br>
+<span class="c">{ "id": "pod-3c9x1a", "state": "starting" }</span></div>
+        </div>
+        <div class="code">
+          <div class="code-h"><span>terraform — a reserved cluster</span><button class="copy" data-copy='resource "msl_cluster" "training" { gpu_type = "h100-sxm" node_count = 8 }'>Copy</button></div>
+          <div class="code-b"><span class="k">resource</span> <span class="s">"msl_cluster"</span> <span class="s">"training"</span> {<br>
+&nbsp;&nbsp;name&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;= <span class="s">"llama-ft"</span><br>
+&nbsp;&nbsp;region&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;= <span class="s">"bom1"</span><br>
+&nbsp;&nbsp;gpu_type&nbsp;&nbsp;&nbsp;= <span class="s">"h100-sxm"</span><br>
+&nbsp;&nbsp;node_count = <span class="k">8</span><br>
+&nbsp;&nbsp;fabric&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;= <span class="s">"infiniband-400g"</span><br>
+&nbsp;&nbsp;scheduler&nbsp;&nbsp;= <span class="s">"slurm"</span><br><br>
+&nbsp;&nbsp;<span class="k">volume</span> {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;tier = <span class="s">"shared-fs"</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;size = <span class="s">"120Ti"</span><br>
+&nbsp;&nbsp;}<br>
+}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="band band-tint pad">
+    <div class="shell stack-lg">
+      <div class="stack-sm"><p class="eyebrow">Reference</p><h2 class="sect">The rest of it</h2></div>
+      <div class="cards cards-3">
+        <a class="lcard" href="#/docs"><span class="go">↗</span><span class="k">API</span><h4 style="font-family:var(--body);font-weight:500;font-size:1.0625rem;margin:14px 0 8px">REST reference</h4><p style="font-size:.9375rem;color:var(--ink-2)">Every endpoint, with request and response schemas and a live sandbox.</p></a>
+        <a class="lcard" href="#/docs"><span class="go">↗</span><span class="k">SDK</span><h4 style="font-family:var(--body);font-weight:500;font-size:1.0625rem;margin:14px 0 8px">Python and Go</h4><p style="font-size:.9375rem;color:var(--ink-2)">Typed clients with retries, pagination and streaming logs built in.</p></a>
+        <a class="lcard" href="#/docs"><span class="go">↗</span><span class="k">IaC</span><h4 style="font-family:var(--body);font-weight:500;font-size:1.0625rem;margin:14px 0 8px">Terraform provider</h4><p style="font-size:.9375rem;color:var(--ink-2)">Pods, clusters, volumes, buckets, VPCs and IAM as code.</p></a>
+        <a class="lcard" href="#/docs"><span class="go">↗</span><span class="k">Images</span><h4 style="font-family:var(--body);font-weight:500;font-size:1.0625rem;margin:14px 0 8px">Base containers</h4><p style="font-size:.9375rem;color:var(--ink-2)">CUDA, ROCm, PyTorch, vLLM and TensorRT images, rebuilt weekly.</p></a>
+        <a class="lcard" href="#/docs"><span class="go">↗</span><span class="k">Guides</span><h4 style="font-family:var(--body);font-weight:500;font-size:1.0625rem;margin:14px 0 8px">Migration guides</h4><p style="font-size:.9375rem;color:var(--ink-2)">Moving from AWS, GCP, Azure and on-premise, with the gotchas named.</p></a>
+        <a class="lcard" href="#/docs"><span class="go">↗</span><span class="k">Status</span><h4 style="font-family:var(--body);font-weight:500;font-size:1.0625rem;margin:14px 0 8px">Status and incidents</h4><p style="font-size:.9375rem;color:var(--ink-2)">Per-region health, maintenance windows and full post-incident reports.</p></a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== COMPANY ===================== -->
+<section class="page" data-page="/company">
+  <div class="shell hero">
+    <div class="stack" style="max-width:860px">
+      <p class="eyebrow">Company</p>
+      <h1>We build the<br>infrastructure<br>we needed</h1>
+      <p class="lede">MSL has spent more than a decade putting enterprise IT into Indian datacenters. We kept watching teams pay hyperscaler rates for capacity that had to sit in-country anyway — so we built the capacity instead.</p>
+    </div>
+  </div>
+
+  <div class="band pad" style="margin-top:56px">
+    <div class="shell split split-t">
+      <div class="stack">
+        <p class="eyebrow">What we're for</p>
+        <h2 class="sect">Compute<br>sovereignty,<br>without the<br>speech</h2>
+        <p class="lede">India generates a growing share of the world's data and trains a shrinking share of the world's models on its own soil. That gap is an infrastructure problem, and infrastructure problems are solved by pouring concrete and buying switches — not by position papers.</p>
+        <p class="lede">We own the racks, the power contracts and the network. That's why the price list is short and the answers are specific.</p>
+      </div>
+      <div class="stack">
+        <div class="ledger" style="grid-template-columns:1fr 1fr">
+          <div><p class="v">2014</p><p class="l">Founded</p></div>
+          <div><p class="v">240<s>+</s></p><p class="l">Enterprise customers</p></div>
+          <div><p class="v">18 MW</p><p class="l">Contracted IT load</p></div>
+          <div><p class="v">130<s>+</s></p><p class="l">Engineers on staff</p></div>
+        </div>
+        <ul class="bullets">
+          <li><b>2014</b> — founded as an infrastructure integrator serving BFSI and manufacturing</li>
+          <li><b>2019</b> — first owned colocation footprint in Navi Mumbai</li>
+          <li><b>2023</b> — GPU platform launched with A100 capacity in Mumbai and Pune</li>
+          <li><b>2025</b> — H100 clusters on 400G InfiniBand; Chennai and Noida regions live</li>
+          <li><b>2026</b> — H200 and MI300X capacity; Hyderabad liquid-cooled build begins</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="band band-tint pad">
+    <div class="shell stack-lg">
+      <div class="stack-sm"><p class="eyebrow">How we operate</p><h2 class="sect">Four commitments</h2></div>
+      <div class="cards cards-4">
+        <div class="card"><span class="k">01</span><h4>Publish the price</h4><p>Every rate is on the pricing page. Discounts exist for volume, but nobody is quoted a different number for the same thing.</p></div>
+        <div class="card"><span class="k">02</span><h4>Publish the benchmark</h4><p>You get real numbers from your shape before you commit, including the ones that don't flatter us.</p></div>
+        <div class="card"><span class="k">03</span><h4>Answer as engineers</h4><p>Support is staffed by people who can read a DCGM trace. First response is a fix attempt, not a triage form.</p></div>
+        <div class="card"><span class="k">04</span><h4>Make leaving easy</h4><p>No egress fees and no proprietary lock-in on storage. If you go, you go with your data and no exit invoice.</p></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="band pad">
+    <div class="shell split split-t">
+      <div class="stack">
+        <p class="eyebrow">Careers</p>
+        <h2 class="sect">Come build<br>the floor</h2>
+        <p class="lede">We're hiring platform engineers, datacenter operations staff and solutions architects across Mumbai, Pune and Chennai. Hardware people especially welcome.</p>
+        <div class="btnrow"><a href="#/contact" class="btn btn-ghost">See open roles <span class="ar">↗</span></a></div>
+      </div>
+      <div class="stack">
+        <p class="eyebrow">Two companies, one group</p>
+        <div class="notch" style="padding:26px 24px">
+          <p style="color:var(--ink-2);font-size:.9375rem;line-height:1.65">
+            <b style="color:var(--ink);font-weight:500">mslproducts.com</b> — this site. Datacenter infrastructure: GPU, compute, storage and platform services, sold globally.
+          </p>
+          <p style="color:var(--ink-2);font-size:.9375rem;line-height:1.65;margin-top:18px;padding-top:18px;border-top:1px solid var(--wire)">
+            <b style="color:var(--ink);font-weight:500">mslproducts.in</b> — our cybersecurity distribution and VAR business, representing 40+ security technologies to Indian enterprises and channel partners.
+          </p>
+          <a href="https://mslproducts.in" class="btn btn-ghost" style="margin-top:22px">Visit MSL Security <span class="ar">↗</span></a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== CONTACT ===================== -->
+<section class="page" data-page="/contact">
+  <div class="shell hero">
+    <div class="stack" style="max-width:820px">
+      <p class="eyebrow">Contact</p>
+      <h1>Tell us the<br>workload</h1>
+      <p class="lede">Sizing questions go to an engineer, not a queue. If you already know what you need, say so and we'll skip straight to a quote.</p>
+    </div>
+  </div>
+
+  <div class="band pad" style="margin-top:48px">
+    <div class="shell split split-t">
+      <form class="stack" id="cform" novalidate>
+        <div class="f2">
+          <label class="field"><span>Name</span><input type="text" name="name" required></label>
+          <label class="field"><span>Work email</span><input type="email" name="email" required></label>
+        </div>
+        <div class="f2">
+          <label class="field"><span>Company</span><input type="text" name="company"></label>
+          <label class="field"><span>What do you need</span>
+            <select name="need">
+              <option>GPU capacity — on-demand</option>
+              <option>GPU capacity — reserved cluster</option>
+              <option>Compute and storage</option>
+              <option>Managed platform</option>
+              <option>Migration from another provider</option>
+              <option>Something else</option>
+            </select>
+          </label>
+        </div>
+        <label class="field"><span>The workload, in your words</span><textarea name="msg" placeholder="Model size, node count, deadline, residency constraints — whatever you already know."></textarea></label>
+        <div class="btnrow"><button type="submit" class="btn btn-primary">Send it <span class="ar">↗</span></button></div>
+        <p class="note" id="fmsg">We reply within one working day. No sequence, no drip campaign.</p>
+      </form>
+      <div class="stack">
+        <p class="eyebrow">Direct lines</p>
+        <ul class="bullets">
+          <li><b>Sales and capacity</b> — sales@mslproducts.com</li>
+          <li><b>Support, 24×7</b> — support@mslproducts.com</li>
+          <li><b>Security and disclosure</b> — security@mslproducts.com</li>
+          <li><b>Media</b> — press@mslproducts.com</li>
+          <li><b>Phone</b> — +91 20 4900 1200</li>
+        </ul>
+        <p class="eyebrow" style="margin-top:34px">Offices</p>
+        <div class="notch" style="padding:24px">
+          <p class="mono" style="font-size:12px;color:var(--blue-hi);letter-spacing:.1em">PUNE — HEAD OFFICE</p>
+          <p style="color:var(--ink-2);font-size:.9375rem;margin-top:8px">Hinjawadi Phase II, Pune 411057, Maharashtra</p>
+          <p class="mono" style="font-size:12px;color:var(--blue-hi);letter-spacing:.1em;margin-top:20px;padding-top:20px;border-top:1px solid var(--wire)">MUMBAI — BOM1 CAMPUS</p>
+          <p style="color:var(--ink-2);font-size:.9375rem;margin-top:8px">Millennium Business Park, Navi Mumbai 400710</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<!-- ===================== FOOTER ===================== -->
+<footer>
+  <div class="shell">
+    <div class="fgrid">
+      <div class="fcol">
+        <a href="#/" class="brand" style="margin-bottom:16px">
+          <svg class="brand-mk" viewBox="0 0 26 26" fill="none" aria-hidden="true">
+            <rect x=".5" y=".5" width="25" height="25" stroke="#2E6BFF"/>
+            <rect x="5" y="5" width="7" height="7" fill="#2E6BFF"/>
+            <rect x="14" y="5" width="7" height="7" fill="#4DE1FF" opacity=".55"/>
+            <rect x="5" y="14" width="7" height="7" fill="#4DE1FF" opacity=".55"/>
+            <rect x="14" y="14" width="7" height="7" fill="#2E6BFF"/>
+          </svg>
+          <span class="brand-tx">MSL <s>/ Products</s></span>
+        </a>
+        <p style="color:var(--ink-3);font-size:.875rem;max-width:34ch">GPU, compute and storage from Tier III datacenters in Mumbai, Pune, Chennai and Noida.</p>
+      </div>
+      <div class="fcol"><h5>Services</h5>
+        <a href="#/gpu">GPU as a Service</a><a href="#/compute">Compute as a Service</a>
+        <a href="#/storage">Storage as a Service</a><a href="#/platform">Platform</a><a href="#/pricing">Pricing</a>
+      </div>
+      <div class="fcol"><h5>Solutions</h5>
+        <a href="#/solutions">Model training</a><a href="#/solutions">Inference</a>
+        <a href="#/solutions">Render and VFX</a><a href="#/solutions">HPC</a><a href="#/solutions">Private cloud</a>
+      </div>
+      <div class="fcol"><h5>Developers</h5>
+        <a href="#/docs">Quickstart</a><a href="#/docs">API reference</a>
+        <a href="#/docs">Terraform provider</a><a href="#/docs">Base images</a><a href="#/docs">Status</a>
+      </div>
+      <div class="fcol"><h5>Company</h5>
+        <a href="#/company">About MSL</a><a href="#/infrastructure">Datacenters</a>
+        <a href="#/company">Careers</a><a href="#/contact">Contact</a>
+        <a href="https://mslproducts.in">MSL Security ↗</a>
+      </div>
+    </div>
+    <div class="fbase">
+      <span>© 2026 MSL Products · All rights reserved</span>
+      <span>Terms · Privacy · SLA · Trust portal · Acceptable use</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+/* ============================================================
+   Router. In Next.js this file becomes app/(marketing)/<segment>/page.tsx
+   and every data-page value maps to a route segment.
+   ============================================================ */
+(function(){
+  var pages = document.querySelectorAll('.page');
+  var links = document.querySelectorAll('.navlinks a');
+
+  function route(){
+    var path = (location.hash || '#/').replace('#','') || '/';
+    var found = false;
+    pages.forEach(function(p){
+      var on = p.dataset.page === path;
+      p.classList.toggle('on', on);
+      if(on) found = true;
+    });
+    if(!found){ pages[0].classList.add('on'); path = '/'; }
+    links.forEach(function(a){ a.classList.toggle('on', a.getAttribute('href') === '#'+path); });
+    document.getElementById('nav').classList.remove('open');
+    document.getElementById('burger').setAttribute('aria-expanded','false');
+    window.scrollTo({top:0, behavior:'instant'});
+    observe();
+    if(path === '/') fillRack();
+  }
+  window.addEventListener('hashchange', route);
+
+  /* mobile nav */
+  var burger = document.getElementById('burger');
+  burger.addEventListener('click', function(){
+    var nav = document.getElementById('nav');
+    var open = nav.classList.toggle('open');
+    burger.setAttribute('aria-expanded', open ? 'true' : 'false');
+  });
+
+  /* ---- signature: rack sleds fill on load ---- */
+  var racked = false;
+  function fillRack(){
+    var rack = document.getElementById('rack');
+    if(!rack) return;
+    rack.querySelectorAll('.slots').forEach(function(s){
+      if(!s.children.length){
+        for(var i=0;i<8;i++) s.appendChild(document.createElement('i')).className = 'slot';
+      }
+    });
+    if(racked) return;
+    racked = true;
+    var rows = Array.prototype.slice.call(rack.querySelectorAll('.slots'));
+    rows.forEach(function(s, ri){
+      var fill = parseInt(s.dataset.fill, 10);
+      var warm = s.dataset.prov === '1';
+      Array.prototype.slice.call(s.children).forEach(function(slot, i){
+        if(i < fill){
+          setTimeout(function(){ slot.classList.add('on'); }, 260 + ri*90 + i*45);
+        }
+      });
+      if(warm){
+        Array.prototype.slice.call(s.children).forEach(function(slot, i){
+          setTimeout(function(){ slot.classList.add('warm'); }, 1400 + i*130);
+        });
+      }
+    });
+  }
+
+  /* ---- scroll reveal ---- */
+  var io = new IntersectionObserver(function(es){
+    es.forEach(function(e){ if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); } });
+  }, {threshold:.08, rootMargin:'0px 0px -40px 0px'});
+  function observe(){
+    document.querySelectorAll('.page.on .band, .page.on .cta').forEach(function(el){
+      if(!el.classList.contains('reveal')){ el.classList.add('reveal'); io.observe(el); }
+    });
+  }
+
+  /* ---- pricing term toggle ---- */
+  var MULT = {on:1, res:0.78, com:0.62};
+  var NOTE = {
+    on:'On-demand · billed per second · no minimum term',
+    res:'Reserved 12 months · 22% below on-demand · capacity held for you',
+    com:'Committed 36 months · 38% below on-demand · flexible across GPU types'
+  };
+  function renderPrices(term){
+    var m = MULT[term];
+    document.querySelectorAll('#gputbl tr').forEach(function(tr){
+      var base = parseFloat(tr.dataset.base);
+      var hr = base * m;
+      tr.children[2].textContent = '₹' + hr.toFixed(hr < 100 ? 1 : 0) + ' /hr';
+      tr.children[3].textContent = '≈ ₹' + Math.round(hr*730).toLocaleString('en-IN') + ' /mo';
+    });
+    var n = document.getElementById('termnote');
+    if(n) n.textContent = NOTE[term];
+  }
+  var termBox = document.getElementById('term');
+  if(termBox){
+    termBox.addEventListener('click', function(e){
+      var b = e.target.closest('button'); if(!b) return;
+      termBox.querySelectorAll('button').forEach(function(x){ x.classList.remove('on'); });
+      b.classList.add('on');
+      renderPrices(b.dataset.term);
+    });
+    renderPrices('on');
+  }
+
+  /* ---- copy buttons ---- */
+  document.addEventListener('click', function(e){
+    var b = e.target.closest('.copy'); if(!b) return;
+    var t = b.dataset.copy || '';
+    if(navigator.clipboard) navigator.clipboard.writeText(t);
+    var old = b.textContent; b.textContent = 'Copied';
+    setTimeout(function(){ b.textContent = old; }, 1400);
+  });
+
+  /* ---- contact form ---- */
+  var cf = document.getElementById('cform');
+  if(cf) cf.addEventListener('submit', function(e){
+    e.preventDefault();
+    var msg = document.getElementById('fmsg');
+    var name = cf.elements.name.value.trim(), email = cf.elements.email.value.trim();
+    if(!name || !email.includes('@')){
+      msg.textContent = 'Add a name and a work email so we know where to reply.';
+      msg.style.color = 'var(--thermal)';
+      return;
+    }
+    msg.textContent = 'Sent. An engineer will reply within one working day.';
+    msg.style.color = 'var(--signal)';
+    cf.reset();
+  });
+
+  route();
+})();
+</script>
+</body>
+</html>
