@@ -35,7 +35,87 @@ export default function BillingPage() {
   };
 
   return (
-    <div>
+    <div className="billing-page-wide" style={{ maxWidth: 1800, width: "100%", margin: "0 auto" }}>
+      {/* Scoped size/width overrides — adjust values here to taste */}
+      <style>{`
+        .billing-page-wide {
+          font-size: 15px;
+        }
+        .billing-page-wide .tiles {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+          gap: 24px;
+          margin-bottom: 28px;
+        }
+        .billing-page-wide .tile {
+          padding: 24px 26px;
+        }
+        .billing-page-wide .tile .l {
+          font-size: 13px;
+        }
+        .billing-page-wide .tile .v {
+          font-size: 30px;
+          margin: 6px 0;
+        }
+        .billing-page-wide .tile .d {
+          font-size: 13px;
+        }
+        .billing-page-wide .cols {
+          display: grid;
+          grid-template-columns: minmax(0, 2.1fr) minmax(0, 1fr);
+          gap: 28px;
+          align-items: start;
+        }
+        .billing-page-wide .panel {
+          margin-bottom: 28px;
+        }
+        .billing-page-wide .panel .h {
+          padding: 18px 24px;
+        }
+        .billing-page-wide .panel .h h3 {
+          font-size: 17px;
+        }
+        .billing-page-wide .panel .b {
+          padding: 22px 24px;
+        }
+        .billing-page-wide table {
+          font-size: 15px;
+        }
+        .billing-page-wide table th,
+        .billing-page-wide table td {
+          padding: 14px 18px;
+        }
+        .billing-page-wide .meter {
+          height: 12px;
+        }
+        .billing-page-wide .legend {
+          font-size: 14px;
+          margin-top: 10px;
+        }
+        .billing-page-wide .field {
+          margin-top: 20px;
+        }
+        .billing-page-wide .field input,
+        .billing-page-wide .field select {
+          padding: 12px 14px;
+          font-size: 15px;
+        }
+        .billing-page-wide .btn {
+          padding: 12px 18px;
+          font-size: 15px;
+        }
+        .billing-page-wide .kv dt,
+        .billing-page-wide .kv dd {
+          font-size: 14px;
+        }
+
+        @media (max-width: 1100px) {
+          .billing-page-wide .cols {
+            grid-template-columns: 1fr;
+          }
+        }
+      `}</style>
+
       {/* Stat Tiles */}
       <div className="tiles">
         <div className="tile">
@@ -202,7 +282,7 @@ export default function BillingPage() {
                 </span>
                 <span>{lakh(spend.cap)} cap</span>
               </div>
-              
+
               <label className="field" style={{ marginTop: "18px" }}>
                 <span className="lbl">Monthly cap (INR)</span>
                 <input
@@ -211,7 +291,7 @@ export default function BillingPage() {
                   onChange={(e) => setCapVal(e.target.value)}
                 />
               </label>
-              
+
               <label className="field">
                 <span className="lbl">When exceeded</span>
                 <select value={exceedAction} onChange={(e) => setExceedAction(e.target.value)}>
@@ -224,7 +304,7 @@ export default function BillingPage() {
                   </option>
                 </select>
               </label>
-              
+
               <button className="btn btn-primary btn-full btn-sm" onClick={handleSaveCap}>
                 Save cap
               </button>

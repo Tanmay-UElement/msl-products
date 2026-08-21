@@ -182,24 +182,24 @@ export default function ConsoleLayout({
         ></div>
 
         {/* Sidebar navigation */}
-        <aside className={`side ${sidebarOpen ? "open" : ""}`} id="side">
-          <div className="side-top">
+        <aside className={`side ${sidebarOpen ? "open" : ""} lg:w-[260px]`} id="side">
+          <div className="side-top px-5 py-5">
             <Link className="brand" href="/">
-              <svg viewBox="0 0 26 26" fill="none" aria-hidden="true">
+              <svg viewBox="0 0 26 26" fill="none" aria-hidden="true" width="28" height="28">
                 <rect x=".5" y=".5" width="25" height="25" stroke="#2E6BFF" />
                 <rect x="5" y="5" width="7" height="7" fill="#2E6BFF" />
                 <rect x="14" y="5" width="7" height="7" fill="#4DE1FF" opacity=".55" />
                 <rect x="5" y="14" width="7" height="7" fill="#4DE1FF" opacity=".55" />
                 <rect x="14" y="14" width="7" height="7" fill="#2E6BFF" />
               </svg>
-              <span>
+              <span className="text-[15px]">
                 MSL <s>/ Console</s>
               </span>
             </Link>
-            
+
             <div style={{ position: "relative" }}>
               <button
-                className="proj"
+                className="proj text-sm px-3 py-2.5"
                 onClick={() => setProjectMenuOpen(!projectMenuOpen)}
               >
                 <span>
@@ -219,7 +219,7 @@ export default function ConsoleLayout({
                     border: "1px solid var(--wire-2)",
                     borderRadius: "3px",
                     zIndex: 60,
-                    marginTop: "5px",
+                    marginTop: "6px",
                   }}
                 >
                   {org.projects.map((p) => (
@@ -230,8 +230,8 @@ export default function ConsoleLayout({
                         display: "block",
                         width: "100%",
                         textAlign: "left",
-                        padding: "10px 12px",
-                        fontSize: "11px",
+                        padding: "11px 14px",
+                        fontSize: "12px",
                         fontFamily: "var(--mono)",
                         borderBottom: "1px solid var(--wire)",
                         transition: ".15s",
@@ -246,10 +246,10 @@ export default function ConsoleLayout({
             </div>
           </div>
 
-          <nav>
+          <nav className="text-[15px] px-2">
             {groupOrder.map((group) => (
               <div key={group}>
-                <h6>{group}</h6>
+                <h6 className="text-xs px-3 pt-4 pb-2">{group}</h6>
                 {routeGroups[group].map((r) => {
                   const isSelected = activeSeg === r.seg;
                   const counter = getNavCounter(r.seg);
@@ -257,7 +257,7 @@ export default function ConsoleLayout({
                     <Link
                       key={r.seg}
                       href={`/console${r.seg ? `/${r.seg}` : ""}`}
-                      className={isSelected ? "on" : ""}
+                      className={`${isSelected ? "on" : ""} px-3 py-2.5`}
                       onClick={() => setSidebarOpen(false)}
                     >
                       {NAV_ICONS[r.icon]}
@@ -270,12 +270,12 @@ export default function ConsoleLayout({
             ))}
           </nav>
 
-          <div className="side-foot">
+          <div className="side-foot px-5 py-4">
             <div className="usr">
-              <div className="avatar">{user.initials}</div>
+              <div className="avatar w-9 h-9 text-sm">{user.initials}</div>
               <div style={{ minWidth: 0, flex: 1 }}>
-                <div className="n">{user.name}</div>
-                <div className="e">{user.email}</div>
+                <div className="n text-sm">{user.name}</div>
+                <div className="e text-xs">{user.email}</div>
               </div>
               <button
                 className="x"
@@ -292,23 +292,23 @@ export default function ConsoleLayout({
         {/* Main content body */}
         <div className="main-content">
           {/* Top Headerbar */}
-          <header className="topbar">
+          <header className="topbar px-6 py-4">
             <button className="burger" onClick={() => setSidebarOpen(true)}>
               <span></span>
             </button>
-            
-            <div className="where">
+
+            <div className="where text-[15px]">
               {currentRoute.group} / <b>{currentRoute.title}</b>
             </div>
 
-            <div className="tools">
-              <div className="pill live">
+            <div className="tools gap-3">
+              <div className="pill live text-sm px-3 py-2">
                 <span className="pulse"></span> live
               </div>
-              
+
               <select
-                className="pill"
-                style={{ border: "1px solid var(--wire)", padding: "4px 8px", background: "var(--rack)", color: "inherit", textTransform: "uppercase" }}
+                className="pill text-sm"
+                style={{ border: "1px solid var(--wire)", padding: "7px 12px", background: "var(--rack)", color: "inherit", textTransform: "uppercase" }}
                 value={region}
                 onChange={(e) => setRegion(e.target.value)}
               >
@@ -318,7 +318,7 @@ export default function ConsoleLayout({
                 <option value="DEL1">DEL1 — Noida</option>
               </select>
               <button
-                className="btn btn-primary btn-sm"
+                className="btn btn-primary btn-sm px-4 py-3 text-[15px]"
                 onClick={() => setDeployModalOpen(true)}
               >
                 Deploy <span className="ar">↗</span>
@@ -327,11 +327,11 @@ export default function ConsoleLayout({
           </header>
 
           {/* Console View body */}
-          <main className="console-body-content">
-            <div className="phead">
+          <main className="console-body-content px-8 py-8">
+            <div className="phead mb-6">
               <div>
-                <h1>{currentRoute.title}</h1>
-                <p>{currentRoute.desc}</p>
+                <h1 className="text-2xl">{currentRoute.title}</h1>
+                <p className="text-[15px] mt-1.5">{currentRoute.desc}</p>
               </div>
             </div>
             <div className="view on">

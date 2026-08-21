@@ -18,7 +18,57 @@ export default function ClustersPage() {
   const NODES = [1, 2, 3, 4, 5, 6, 7, 8];
 
   return (
-    <div>
+    <div className="billing-page-wide" style={{ maxWidth: 1800, width: "100%", margin: "0 auto" }}>
+      {/* Scoped size/width overrides — matches BillingPage */}
+      <style>{`
+        .billing-page-wide {
+          font-size: 15px;
+        }
+        .billing-page-wide .cols {
+          display: grid;
+          grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
+          gap: 28px;
+          align-items: start;
+        }
+        .billing-page-wide .panel {
+          margin-bottom: 28px;
+        }
+        .billing-page-wide .panel .h {
+          padding: 18px 24px;
+        }
+        .billing-page-wide .panel .h h3 {
+          font-size: 17px;
+        }
+        .billing-page-wide .panel .b {
+          padding: 22px 24px;
+        }
+        .billing-page-wide table {
+          font-size: 15px;
+        }
+        .billing-page-wide table th,
+        .billing-page-wide table td {
+          padding: 14px 18px;
+        }
+        .billing-page-wide .btn {
+          padding: 12px 18px;
+          font-size: 15px;
+        }
+        .billing-page-wide .kv dt,
+        .billing-page-wide .kv dd {
+          font-size: 14px;
+        }
+        .billing-page-wide .b- {
+          font-size: 13px;
+          padding: 5px 10px;
+        }
+
+        @media (max-width: 1100px) {
+          .billing-page-wide .cols {
+            grid-template-columns: 1fr;
+          }
+        }
+      `}</style>
+
       {/* Clusters List */}
       <div className="panel">
         <div className="h">

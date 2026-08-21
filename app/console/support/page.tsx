@@ -28,34 +28,37 @@ export default function SupportPage() {
   };
 
   return (
-    <div>
+    <div className="max-w-[1800px] w-full mx-auto text-[15px]">
       {/* Tickets List */}
-      <div className="panel">
-        <div className="h">
-          <h3>Tickets</h3>
-          <button className="btn btn-primary btn-sm" onClick={() => setIsTicketOpen(true)}>
+      <div className="panel mb-7">
+        <div className="h px-6 py-4">
+          <h3 className="text-[17px]">Tickets</h3>
+          <button
+            className="btn btn-primary btn-sm px-4 py-3 text-[15px]"
+            onClick={() => setIsTicketOpen(true)}
+          >
             Open a ticket
           </button>
         </div>
         <div className="b flush">
           <div className="tw">
-            <table>
+            <table className="text-[15px]">
               <thead>
                 <tr>
-                  <th>ID</th>
-                  <th>Subject</th>
-                  <th>Severity</th>
-                  <th>State</th>
-                  <th>Updated</th>
+                  <th className="px-4 py-3.5">ID</th>
+                  <th className="px-4 py-3.5">Subject</th>
+                  <th className="px-4 py-3.5">Severity</th>
+                  <th className="px-4 py-3.5">State</th>
+                  <th className="px-4 py-3.5">Updated</th>
                 </tr>
               </thead>
               <tbody>
                 {tickets.map((t) => (
                   <tr key={t.id}>
-                    <td className="m">{t.id}</td>
-                    <td className="n">{t.subject}</td>
-                    <td className="m">{t.sev}</td>
-                    <td>
+                    <td className="m px-4 py-3.5">{t.id}</td>
+                    <td className="n px-4 py-3.5">{t.subject}</td>
+                    <td className="m px-4 py-3.5">{t.sev}</td>
+                    <td className="px-4 py-3.5">
                       {t.state === "Resolved" ? (
                         <span className="b- b-stop">
                           <i></i>Resolved
@@ -70,7 +73,7 @@ export default function SupportPage() {
                         </span>
                       )}
                     </td>
-                    <td className="m">{t.updated}</td>
+                    <td className="m px-4 py-3.5">{t.updated}</td>
                   </tr>
                 ))}
               </tbody>
@@ -80,47 +83,47 @@ export default function SupportPage() {
       </div>
 
       {/* Grid Columns */}
-      <div className="cols">
+      <div className="cols grid grid-cols-1 lg:grid-cols-[1.6fr_1fr] gap-7 items-start">
         {/* Left column: Response Commitments */}
         <div className="panel">
-          <div className="h">
-            <h3>Response commitments</h3>
+          <div className="h px-6 py-4">
+            <h3 className="text-[17px]">Response commitments</h3>
           </div>
           <div className="b flush">
             <div className="tw">
-              <table>
+              <table className="text-[15px]">
                 <thead>
                   <tr>
-                    <th>Severity</th>
-                    <th>Definition</th>
-                    <th>First response</th>
-                    <th>Coverage</th>
+                    <th className="px-4 py-3.5">Severity</th>
+                    <th className="px-4 py-3.5">Definition</th>
+                    <th className="px-4 py-3.5">First response</th>
+                    <th className="px-4 py-3.5">Coverage</th>
                   </tr>
                 </thead>
                 <tbody>
                   <tr>
-                    <td className="n">P1</td>
-                    <td>Production down, no workaround</td>
-                    <td className="r">15 min</td>
-                    <td className="m">24×7</td>
+                    <td className="n px-4 py-3.5">P1</td>
+                    <td className="px-4 py-3.5">Production down, no workaround</td>
+                    <td className="r px-4 py-3.5">15 min</td>
+                    <td className="m px-4 py-3.5">24×7</td>
                   </tr>
                   <tr>
-                    <td className="n">P2</td>
-                    <td>Production degraded</td>
-                    <td className="r">1 hour</td>
-                    <td className="m">24×7</td>
+                    <td className="n px-4 py-3.5">P2</td>
+                    <td className="px-4 py-3.5">Production degraded</td>
+                    <td className="r px-4 py-3.5">1 hour</td>
+                    <td className="m px-4 py-3.5">24×7</td>
                   </tr>
                   <tr>
-                    <td className="n">P3</td>
-                    <td>Non-production issue</td>
-                    <td className="r">4 business hours</td>
-                    <td className="m">IST hours</td>
+                    <td className="n px-4 py-3.5">P3</td>
+                    <td className="px-4 py-3.5">Non-production issue</td>
+                    <td className="r px-4 py-3.5">4 business hours</td>
+                    <td className="m px-4 py-3.5">IST hours</td>
                   </tr>
                   <tr>
-                    <td className="n">P4</td>
-                    <td>Question or request</td>
-                    <td className="r">1 business day</td>
-                    <td className="m">IST hours</td>
+                    <td className="n px-4 py-3.5">P4</td>
+                    <td className="px-4 py-3.5">Question or request</td>
+                    <td className="r px-4 py-3.5">1 business day</td>
+                    <td className="m px-4 py-3.5">IST hours</td>
                   </tr>
                 </tbody>
               </table>
@@ -130,11 +133,11 @@ export default function SupportPage() {
 
         {/* Right column: Hotlines */}
         <div className="panel">
-          <div className="h">
-            <h3>Reach us directly</h3>
+          <div className="h px-6 py-4">
+            <h3 className="text-[17px]">Reach us directly</h3>
           </div>
-          <div className="b">
-            <dl className="kv">
+          <div className="b px-6 py-5">
+            <dl className="kv [&>dt]:text-sm [&>dd]:text-sm">
               <dt>P1 hotline</dt>
               <dd>+91 20 4900 1200, option 1 — 24×7</dd>
               <dt>Email</dt>
@@ -144,7 +147,7 @@ export default function SupportPage() {
               <dt>Escalation</dt>
               <dd>Head of Platform Operations after 2 hours on P1</dd>
             </dl>
-            <p style={{ fontSize: ".8125rem", color: "var(--ink-3)", marginTop: "16px" }}>
+            <p className="text-sm" style={{ color: "var(--ink-3)", marginTop: "18px" }}>
               Support is included at every account size. There is no premium tier to buy.
             </p>
           </div>
@@ -154,18 +157,19 @@ export default function SupportPage() {
       {/* Open Ticket Modal */}
       {isTicketOpen && (
         <div className="modal on" onClick={() => setIsTicketOpen(false)}>
-          <div className="modal-in" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-h">
-              <h3>Open a support ticket</h3>
+          <div className="modal-in max-w-[600px] w-full" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-h px-6 py-5">
+              <h3 className="text-lg">Open a support ticket</h3>
               <button className="x" onClick={() => setIsTicketOpen(false)}>
                 ✕
               </button>
             </div>
             <form onSubmit={handleOpenTicketSubmit}>
-              <div className="modal-b">
+              <div className="modal-b px-6 py-5 text-[15px]">
                 <label className="field">
                   <span className="lbl">Subject</span>
                   <input
+                    className="px-3.5 py-3 text-[15px]"
                     type="text"
                     value={subject}
                     onChange={(e) => setSubject(e.target.value)}
@@ -175,7 +179,11 @@ export default function SupportPage() {
                 </label>
                 <label className="field">
                   <span className="lbl">Severity</span>
-                  <select value={severity} onChange={(e) => setSeverity(e.target.value)}>
+                  <select
+                    className="px-3.5 py-3 text-[15px]"
+                    value={severity}
+                    onChange={(e) => setSeverity(e.target.value)}
+                  >
                     <option value="P1">P1 — Critical (Production Down)</option>
                     <option value="P2">P2 — Major (Production Degraded)</option>
                     <option value="P3">P3 — Minor (Standard Issue)</option>
@@ -190,29 +198,29 @@ export default function SupportPage() {
                     placeholder="Provide logs, cluster ID, or steps to reproduce..."
                     style={{
                       width: "100%",
-                      minHeight: "100px",
+                      minHeight: "120px",
                       background: "var(--rack)",
                       border: "1px solid var(--wire)",
                       borderRadius: "3px",
                       color: "inherit",
                       fontFamily: "inherit",
-                      fontSize: "13px",
-                      padding: "8px",
+                      fontSize: "15px",
+                      padding: "10px",
                       marginTop: "5px",
                     }}
                     required
                   />
                 </label>
               </div>
-              <div className="modal-f">
+              <div className="modal-f px-6 py-4">
                 <button
                   type="button"
-                  className="btn btn-ghost btn-sm"
+                  className="btn btn-ghost btn-sm px-4 py-3 text-[15px]"
                   onClick={() => setIsTicketOpen(false)}
                 >
                   Cancel
                 </button>
-                <button type="submit" className="btn btn-primary btn-sm">
+                <button type="submit" className="btn btn-primary btn-sm px-4 py-3 text-[15px]">
                   Submit ticket
                 </button>
               </div>

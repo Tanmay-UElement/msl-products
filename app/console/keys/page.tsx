@@ -13,13 +13,13 @@ export default function KeysPage() {
   const [expiryInput, setExpiryInput] = useState("Never");
 
   const [generatedKey, setGeneratedKey] = useState<string | null>(null);
-  
+
   const [revokeTarget, setRevokeTarget] = useState<{ id: string; name: string } | null>(null);
 
   const handleCreateSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const name = nameInput.trim() || "untitled-key";
-    
+
     // Add to context list
     const secret = addKey(name, roleInput, expiryInput);
 
@@ -51,7 +51,74 @@ export default function KeysPage() {
   };
 
   return (
-    <div>
+    <div className="billing-page-wide" style={{ maxWidth: 1800, width: "100%", margin: "0 auto" }}>
+      {/* Scoped size/width overrides — matches Billing/Clusters pages */}
+      <style>{`
+        .billing-page-wide {
+          font-size: 15px;
+        }
+        .billing-page-wide .panel {
+          margin-bottom: 28px;
+        }
+        .billing-page-wide .panel .h {
+          padding: 18px 24px;
+        }
+        .billing-page-wide .panel .h h3 {
+          font-size: 17px;
+        }
+        .billing-page-wide .panel .b {
+          padding: 22px 24px;
+        }
+        .billing-page-wide table {
+          font-size: 15px;
+        }
+        .billing-page-wide table th,
+        .billing-page-wide table td {
+          padding: 14px 18px;
+        }
+        .billing-page-wide .btn {
+          padding: 12px 18px;
+          font-size: 15px;
+        }
+        .billing-page-wide .kv dt,
+        .billing-page-wide .kv dd {
+          font-size: 14px;
+        }
+        .billing-page-wide .field {
+          margin-top: 20px;
+        }
+        .billing-page-wide .field input,
+        .billing-page-wide .field select {
+          padding: 12px 14px;
+          font-size: 15px;
+        }
+        .billing-page-wide .modal-in {
+          max-width: 560px;
+          width: 100%;
+        }
+        .billing-page-wide .modal-h {
+          padding: 20px 26px;
+        }
+        .billing-page-wide .modal-h h3 {
+          font-size: 18px;
+        }
+        .billing-page-wide .modal-b {
+          padding: 22px 26px;
+          font-size: 15px;
+        }
+        .billing-page-wide .modal-f {
+          padding: 18px 26px;
+        }
+        .billing-page-wide .alert {
+          padding: 14px 16px;
+          font-size: 14px;
+        }
+        .billing-page-wide .code {
+          padding: 16px 18px;
+          font-size: 14px;
+        }
+      `}</style>
+
       {/* Active Keys Panel */}
       <div className="panel">
         <div className="h">

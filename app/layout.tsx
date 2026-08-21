@@ -8,6 +8,7 @@ const archivo = Archivo({
   variable: "--font-archivo",
   subsets: ["latin"],
   display: "swap",
+  axes: ["wdth"],
 });
 
 const ibmPlexSans = IBM_Plex_Sans({
