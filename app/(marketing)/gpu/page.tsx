@@ -7,24 +7,25 @@ export default function GpuPage() {
   return (
     <div className="page on">
       {/* Hero */}
-      <div className="shell hero">
-        <div className="stack" style={{ maxWidth: "820px" }}>
+      <div className="shell hero px-5 sm:px-8">
+        <div className="stack w-full max-w-[820px]">
           <p className="eyebrow">
             GPU as a Service &nbsp;·&nbsp; <b>GPUaaS</b>
           </p>
           <h1>
             One card or
-            <br />
+            <br className="hidden sm:inline" />
+            <span className="sm:hidden"> </span>
             five hundred
           </h1>
           <p className="lede">
             Containerised pods for iteration, bare metal for production, and interconnected clusters when a single node stops being enough. Same catalogue, same console, same bill.
           </p>
-          <div className="btnrow">
-            <Link href="/pricing" className="btn btn-primary">
+          <div className="btnrow flex flex-wrap gap-3 sm:flex-nowrap">
+            <Link href="/pricing" className="btn btn-primary w-full justify-center text-center sm:w-auto">
               See GPU pricing <span className="ar">↗</span>
             </Link>
-            <Link href="/contact" className="btn btn-ghost">
+            <Link href="/contact" className="btn btn-ghost w-full justify-center text-center sm:w-auto">
               Reserve capacity
             </Link>
           </div>
@@ -38,8 +39,8 @@ export default function GpuPage() {
             <p className="eyebrow">Catalogue</p>
             <h2 className="sect">Available today</h2>
           </div>
-          <div className="tblwrap">
-            <table>
+          <div className="tblwrap overflow-x-auto">
+            <table className="min-w-[640px] w-full">
               <thead>
                 <tr>
                   <th>Accelerator</th>
@@ -126,8 +127,8 @@ export default function GpuPage() {
 
       {/* Three shapes */}
       <ScrollReveal className="band band-tint pad">
-        <div className="shell railed">
-          <div className="rail">
+        <div className="shell railed flex flex-col md:flex-row gap-6 md:gap-8">
+          <div className="rail flex flex-row items-center md:flex-col">
             <div className="rail-u">U38</div>
           </div>
           <div className="rbody stack-lg">
@@ -135,11 +136,12 @@ export default function GpuPage() {
               <p className="eyebrow">Three shapes</p>
               <h2 className="sect">
                 Pick how close
-                <br />
+                <br className="hidden sm:inline" />
+                <span className="sm:hidden"> </span>
                 to the metal
               </h2>
             </div>
-            <div className="cards cards-3">
+            <div className="cards cards-3 grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="card">
                 <span className="k">Pods</span>
                 <h4>Containerised</h4>
@@ -168,12 +170,13 @@ export default function GpuPage() {
 
       {/* Cluster Engineering */}
       <ScrollReveal className="band pad">
-        <div className="shell split split-t">
+        <div className="shell split split-t grid grid-cols-1 lg:grid-cols-2 gap-8">
           <div className="stack">
             <p className="eyebrow">Cluster engineering</p>
             <h2 className="sect">
               Fabric that
-              <br />
+              <br className="hidden sm:inline" />
+              <span className="sm:hidden"> </span>
               actually scales
             </h2>
             <p className="lede">
@@ -197,7 +200,7 @@ export default function GpuPage() {
               </li>
             </ul>
           </div>
-          
+
           <div className="stack">
             <CodeBlock
               title="nccl-tests — 64× H100 SXM, BOM1"
@@ -229,17 +232,18 @@ export default function GpuPage() {
 
       {/* CTA */}
       <ScrollReveal className="cta pad">
-        <div className="shell stack" style={{ textAlign: "center", maxWidth: "720px" }}>
-          <h2 className="sect" style={{ fontSize: "clamp(1.9rem,4.6vw,3rem)" }}>
+        <div className="shell stack mx-auto max-w-[720px] text-center">
+          <h2 className="sect text-[clamp(1.9rem,4.6vw,3rem)]">
             Need more than
-            <br />
+            <br className="hidden sm:inline" />
+            <span className="sm:hidden"> </span>
             a single node?
           </h2>
-          <p className="lede" style={{ margin: "0 auto" }}>
+          <p className="lede mx-auto">
             Tell us the model size and the deadline. We'll come back with a topology, a price and a date.
           </p>
-          <div className="btnrow" style={{ justifyContent: "center" }}>
-            <Link href="/contact" className="btn btn-primary">
+          <div className="btnrow flex flex-wrap justify-center gap-3">
+            <Link href="/contact" className="btn btn-primary w-full justify-center text-center sm:w-auto">
               Talk to capacity planning <span className="ar">↗</span>
             </Link>
           </div>

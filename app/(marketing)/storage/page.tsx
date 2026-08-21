@@ -7,26 +7,28 @@ export default function StoragePage() {
   return (
     <div className="page on">
       {/* Hero */}
-      <div className="shell hero">
-        <div className="stack" style={{ maxWidth: "820px" }}>
+      <div className="shell hero px-5 sm:px-8">
+        <div className="stack w-full max-w-[820px]">
           <p className="eyebrow">
             Storage as a Service &nbsp;·&nbsp; <b>StaaS</b>
           </p>
           <h1>
             Free to
-            <br />
+            <br className="hidden sm:inline" />
+            <span className="sm:hidden"> </span>
             read. Free
-            <br />
+            <br className="hidden sm:inline" />
+            <span className="sm:hidden"> </span>
             to leave.
           </h1>
           <p className="lede">
             Three tiers on one namespace, sitting on the same fabric as your GPUs. We don't charge for egress, requests or retrieval — the price on the tier is the price you pay.
           </p>
-          <div className="btnrow">
-            <Link href="/pricing" className="btn btn-primary">
+          <div className="btnrow flex flex-wrap gap-3 sm:flex-nowrap">
+            <Link href="/pricing" className="btn btn-primary w-full justify-center text-center sm:w-auto">
               See storage pricing <span className="ar">↗</span>
             </Link>
-            <Link href="/docs" className="btn btn-ghost">
+            <Link href="/docs" className="btn btn-ghost w-full justify-center text-center sm:w-auto">
               S3 API reference
             </Link>
           </div>
@@ -40,8 +42,8 @@ export default function StoragePage() {
             <p className="eyebrow">Tiers</p>
             <h2 className="sect">Hot, warm, cold</h2>
           </div>
-          <div className="tblwrap">
-            <table>
+          <div className="tblwrap overflow-x-auto">
+            <table className="min-w-[640px] w-full">
               <thead>
                 <tr>
                   <th>Tier</th>
@@ -96,20 +98,22 @@ export default function StoragePage() {
 
       {/* Compatibility split */}
       <ScrollReveal className="band band-tint pad">
-        <div className="shell split split-t">
+        <div className="shell split split-t grid grid-cols-1 lg:grid-cols-2 gap-8">
           <div className="stack">
             <p className="eyebrow">Compatibility</p>
             <h2 className="sect">
               It speaks S3,
-              <br />
+              <br className="hidden sm:inline" />
+              <span className="sm:hidden"> </span>
               so nothing
-              <br />
+              <br className="hidden sm:inline" />
+              <span className="sm:hidden"> </span>
               changes
             </h2>
             <p className="lede">
               Point your existing SDK at a new endpoint. Signature v4, multipart, versioning, lifecycle rules, presigned URLs and object lock all behave the way your code already expects.
             </p>
-            <div className="chips">
+            <div className="chips flex flex-wrap gap-2">
               <span className="chip">boto3</span>
               <span className="chip">aws-cli</span>
               <span className="chip">rclone</span>
@@ -120,35 +124,37 @@ export default function StoragePage() {
               <span className="chip">DVC</span>
             </div>
           </div>
-          
-          <CodeBlock
-            title="python — same code, new endpoint"
-            codeText="s3 = boto3.client('s3', endpoint_url='https://s3.bom1.mslproducts.com')"
-            displayCode={
-              <>
-                <span className="k">import</span> boto3
-                <br />
-                <br />
-                s3 = boto3.<span className="k">client</span>(
-                <br />
-                &nbsp;&nbsp;&nbsp;&nbsp;<span className="s">"s3"</span>,
-                <br />
-                &nbsp;&nbsp;&nbsp;&nbsp;endpoint_url=<span className="s">"https://s3.bom1.mslproducts.com"</span>,
-                <br />
-                &nbsp;&nbsp;&nbsp;&nbsp;region_name=<span className="s">"bom1"</span>,
-                <br />
-                )
-                <br />
-                <br />
-                s3.<span className="k">upload_file</span>(<span className="s">"ckpt-4200.safetensors"</span>,
-                <br />
-                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span className="s">"runs"</span>, <span className="s">"llama-ft/ckpt-4200"</span>)
-                <br />
-                <br />
-                <span className="c"># 41.2 GB in 3m12s · egress charge ₹0.00</span>
-              </>
-            }
-          />
+
+          <div className="overflow-x-auto">
+            <CodeBlock
+              title="python — same code, new endpoint"
+              codeText="s3 = boto3.client('s3', endpoint_url='https://s3.bom1.mslproducts.com')"
+              displayCode={
+                <>
+                  <span className="k">import</span> boto3
+                  <br />
+                  <br />
+                  s3 = boto3.<span className="k">client</span>(
+                  <br />
+                  &nbsp;&nbsp;&nbsp;&nbsp;<span className="s">"s3"</span>,
+                  <br />
+                  &nbsp;&nbsp;&nbsp;&nbsp;endpoint_url=<span className="s">"https://s3.bom1.mslproducts.com"</span>,
+                  <br />
+                  &nbsp;&nbsp;&nbsp;&nbsp;region_name=<span className="s">"bom1"</span>,
+                  <br />
+                  )
+                  <br />
+                  <br />
+                  s3.<span className="k">upload_file</span>(<span className="s">"ckpt-4200.safetensors"</span>,
+                  <br />
+                  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span className="s">"runs"</span>, <span className="s">"llama-ft/ckpt-4200"</span>)
+                  <br />
+                  <br />
+                  <span className="c"># 41.2 GB in 3m12s · egress charge ₹0.00</span>
+                </>
+              }
+            />
+          </div>
         </div>
       </ScrollReveal>
 
@@ -159,11 +165,12 @@ export default function StoragePage() {
             <p className="eyebrow">Protection</p>
             <h2 className="sect">
               Assume the
-              <br />
+              <br className="hidden sm:inline" />
+              <span className="sm:hidden"> </span>
               worst happens
             </h2>
           </div>
-          <div className="cards cards-4">
+          <div className="cards cards-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="card">
               <span className="k">Encryption</span>
               <h4>AES-256 at rest</h4>

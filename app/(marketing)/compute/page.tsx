@@ -6,24 +6,25 @@ export default function ComputePage() {
   return (
     <div className="page on">
       {/* Hero */}
-      <div className="shell hero">
-        <div className="stack" style={{ maxWidth: "820px" }}>
+      <div className="shell hero px-5 sm:px-8">
+        <div className="stack w-full max-w-[820px]">
           <p className="eyebrow">
             Compute as a Service &nbsp;·&nbsp; <b>CaaS</b>
           </p>
           <h1>
             CPU that
-            <br />
+            <br className="hidden sm:inline" />
+            <span className="sm:hidden"> </span>
             keeps up
           </h1>
           <p className="lede">
             GPUs are useless if the data pipeline stalls. Our compute tier sits on the same leaf switches as the accelerators, so preprocessing, serving and databases stay next to the work.
           </p>
-          <div className="btnrow">
-            <Link href="/pricing" className="btn btn-primary">
+          <div className="btnrow flex flex-wrap gap-3 sm:flex-nowrap">
+            <Link href="/pricing" className="btn btn-primary w-full justify-center text-center sm:w-auto">
               See compute pricing <span className="ar">↗</span>
             </Link>
-            <Link href="/docs" className="btn btn-ghost">
+            <Link href="/docs" className="btn btn-ghost w-full justify-center text-center sm:w-auto">
               Read the docs
             </Link>
           </div>
@@ -37,12 +38,13 @@ export default function ComputePage() {
             <p className="eyebrow">Instance families</p>
             <h2 className="sect">
               Four shapes,
-              <br />
+              <br className="hidden sm:inline" />
+              <span className="sm:hidden"> </span>
               no surprises
             </h2>
           </div>
-          <div className="tblwrap">
-            <table>
+          <div className="tblwrap overflow-x-auto">
+            <table className="min-w-[640px] w-full">
               <thead>
                 <tr>
                   <th>Family</th>
@@ -100,11 +102,12 @@ export default function ComputePage() {
             <p className="eyebrow">How it runs</p>
             <h2 className="sect">
               Virtual, dedicated
-              <br />
+              <br className="hidden sm:inline" />
+              <span className="sm:hidden"> </span>
               or bare
             </h2>
           </div>
-          <div className="cards cards-3">
+          <div className="cards cards-3 grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="card">
               <span className="k">Instances</span>
               <h4>Virtual machines</h4>
@@ -130,12 +133,13 @@ export default function ComputePage() {
 
       {/* Networking & Features */}
       <ScrollReveal className="band pad">
-        <div className="shell split split-t">
+        <div className="shell split split-t grid grid-cols-1 lg:grid-cols-2 gap-8">
           <div className="stack">
             <p className="eyebrow">Networking</p>
             <h2 className="sect">
               Private by
-              <br />
+              <br className="hidden sm:inline" />
+              <span className="sm:hidden"> </span>
               default
             </h2>
             <ul className="bullets">
@@ -156,10 +160,10 @@ export default function ComputePage() {
               </li>
             </ul>
           </div>
-          
+
           <div className="stack">
             <p className="eyebrow">Also included</p>
-            <div className="cards cards-2">
+            <div className="cards cards-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="card">
                 <span className="k">Backup</span>
                 <h4>Scheduled snapshots</h4>
@@ -187,17 +191,18 @@ export default function ComputePage() {
 
       {/* CTA */}
       <ScrollReveal className="cta pad">
-        <div className="shell stack" style={{ textAlign: "center", maxWidth: "720px" }}>
-          <h2 className="sect" style={{ fontSize: "clamp(1.9rem,4.6vw,3rem)" }}>
+        <div className="shell stack mx-auto max-w-[720px] text-center">
+          <h2 className="sect text-[clamp(1.9rem,4.6vw,3rem)]">
             Migrating from
-            <br />
+            <br className="hidden sm:inline" />
+            <span className="sm:hidden"> </span>
             somewhere else?
           </h2>
-          <p className="lede" style={{ margin: "0 auto" }}>
+          <p className="lede mx-auto">
             We do the assessment, the move and the cutover. Most workloads land inside a fortnight.
           </p>
-          <div className="btnrow" style={{ justifyContent: "center" }}>
-            <Link href="/contact" className="btn btn-primary">
+          <div className="btnrow flex flex-wrap justify-center gap-3">
+            <Link href="/contact" className="btn btn-primary w-full justify-center text-center sm:w-auto">
               Plan a migration <span className="ar">↗</span>
             </Link>
           </div>

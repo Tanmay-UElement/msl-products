@@ -168,6 +168,18 @@ h3.sub {
   padding: 0 28px;
 }
 
+@media(max-width:600px) {
+  .shell {
+    padding: 0 20px;
+  }
+}
+
+@media(max-width:380px) {
+  .shell {
+    padding: 0 16px;
+  }
+}
+
 .railed {
   display: grid;
   grid-template-columns: var(--rail) 1fr;
@@ -464,6 +476,33 @@ header.nav {
   }
 }
 
+@media(max-width:600px) {
+  .pad {
+    padding: 40px 0;
+  }
+}
+
+/* Responsive top margin for the logo band below hero */
+.band-mt {
+  margin-top: 72px;
+}
+
+@media(max-width:860px) {
+  .band-mt {
+    margin-top: 40px;
+  }
+}
+
+@media(max-width:600px) {
+  .band-mt {
+    margin-top: 28px;
+  }
+  /* Tighten logo strip gap on small screens */
+  .logos {
+    gap: 10px 24px;
+  }
+}
+
 .stack-sm > * + * {
   margin-top: 14px;
 }
@@ -639,6 +678,12 @@ header.nav {
   padding: 64px 0 0;
 }
 
+@media(max-width:600px) {
+  .hero {
+    padding: 40px 0 0;
+  }
+}
+
 .hero h1 {
   font-family: var(--disp);
   font-weight: 800;
@@ -665,6 +710,22 @@ header.nav {
   .herogrid {
     grid-template-columns: 1fr;
     gap: 36px;
+  }
+  .rackwrap {
+    max-height: 380px;
+    overflow: hidden;
+  }
+}
+
+@media(max-width:640px) {
+  .herogrid {
+    gap: 28px;
+  }
+  .rackwrap {
+    max-height: 260px;
+  }
+  .hero h1 {
+    font-size: clamp(2rem, 10vw, 2.6rem);
   }
 }
 

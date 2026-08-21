@@ -43,7 +43,7 @@ export default function HomePage() {
       </div>
 
       {/* Logo band */}
-      <div className="band pad" style={{ marginTop: "72px" }}>
+      <div className="band pad band-mt">
         <div className="shell stack">
           <p className="eyebrow">Running production workloads on MSL</p>
           <div className="logos">
